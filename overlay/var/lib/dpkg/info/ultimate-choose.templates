@@ -15,8 +15,8 @@ Description: Init system:
 
 Template: ultimate/kernel
 Type: select
-Choices-C: linux-libre, linux, linux-xanmod, linux-liquorix
-Choices: linux-libre (Default), linux (Recommended), linux-xanmod, linux-liquorix
+Choices-C: linux-libre, linux
+Choices: linux-libre (Default), linux (Recommended)
 Default: linux-libre
 Description: Kernel:
  linux-libre is 100% free software: it will not load closed firmware or

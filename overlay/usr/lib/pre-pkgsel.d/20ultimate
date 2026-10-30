@@ -24,22 +24,6 @@ linux-libre)
 	echo "deb [signed-by=/etc/apt/keyrings/freesh-archive-keyring.gpg] https://linux-libre.fsfla.org/pub/linux-libre/freesh/ freesh main" > $S/freesh.list
 	PKGS="linux-libre-lts"
 	;;
-linux-xanmod)
-	cp /usr/share/ultimate/xanmod.gpg $K/
-	echo "deb [signed-by=/etc/apt/keyrings/xanmod.gpg] http://deb.xanmod.org trixie main" > $S/xanmod.list
-	# Pick the build for this CPU level (x86-64-v3 needs AVX2/BMI2/FMA/MOVBE).
-	if grep -q avx2 /proc/cpuinfo && grep -q bmi2 /proc/cpuinfo && \
-	   grep -q fma /proc/cpuinfo && grep -q movbe /proc/cpuinfo; then
-		PKGS="linux-xanmod-x64v3"
-	else
-		PKGS="linux-xanmod-x64v2"
-	fi
-	;;
-linux-liquorix)
-	cp /usr/share/ultimate/liquorix.gpg $K/
-	echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/liquorix.gpg] https://liquorix.net/debian trixie main" > $S/liquorix.list
-	PKGS="linux-image-liquorix-amd64"
-	;;
 *)
 	exit 0
 	;;

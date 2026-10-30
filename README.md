@@ -8,8 +8,8 @@ It is the stock Devuan installer (text mode) with a few touches.
 |---|---|---|
 | SysV (Default) | linux-libre (Default) | MATE (Default) |
 | OpenRC (Recommended) | linux (Recommended) | Xfce (Recommended) |
-| runit | linux-xanmod | Cinnamon, GNOME, GNOME Flashback, KDE, LXDE, LXQt |
-| systemd -> Debian base | linux-liquorix | none |
+| runit | | Cinnamon, GNOME, GNOME Flashback, KDE, LXDE, LXQt |
+| systemd -> Debian base | | none |
 
 ## How it works
 - `overlay/` is appended to the installer initrd (`preamble.gz`) as a second cpio.
@@ -17,8 +17,8 @@ It is the stock Devuan installer (text mode) with a few touches.
     three questions, answers Devuan's `choose-init` and `tasksel`, and for
     systemd points debootstrap at deb.debian.org instead of the disc.
     It also lists hardware that needs closed firmware (won't work with linux-libre).
-  - `pre-pkgsel.d/20ultimate` installs the chosen kernel (freesh / XanMod /
-    Liquorix repos); the stock kernel stays as a fallback GRUB entry.
+  - `pre-pkgsel.d/20ultimate` installs the chosen kernel (linux-libre from
+    the FSFLA freesh repo); the stock kernel stays as a fallback GRUB entry.
   - `finish-install.d/35ultimate` installs `ultimate-firmware`; with linux-libre
     it purges non-free firmware/microcode and leaves only `main`.
 - Closed firmware is opt-in: `ultimate-firmware` lists the hardware that needs
