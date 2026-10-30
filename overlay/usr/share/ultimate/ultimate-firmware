@@ -1,0 +1,82 @@
+#!/bin/sh
+# ultimate-firmware: closed firmware is opt-in, never installed by default.
+#   ultimate-firmware            show hardware that needs closed firmware
+#   ultimate-firmware install    enable non-free-firmware and install only that
+#   ultimate-firmware remove     purge it again and go back to main only
+#   ultimate-firmware drivers    (internal) just print the driver names
+set -e
+
+# driver:package (Debian trixie names)
+MAP="iwlwifi:firmware-iwlwifi iwlmvm:firmware-iwlwifi btintel:firmware-iwlwifi
+amdgpu:firmware-amd-graphics radeon:firmware-amd-graphics
+nouveau:firmware-nvidia-graphics i915:firmware-intel-graphics xe:firmware-intel-graphics
+rtw88_pci:firmware-realtek rtw89_pci:firmware-realtek rtl8192ce:firmware-realtek
+rtl8xxxu:firmware-realtek r8169:firmware-realtek btrtl:firmware-realtek
+ath9k_htc:firmware-atheros ath10k_pci:firmware-atheros ath11k_pci:firmware-atheros
+ath12k:firmware-atheros brcmfmac:firmware-brcm80211 b43:firmware-brcm80211
+mt7921e:firmware-mediatek mt7925e:firmware-mediatek bnx2:firmware-bnx2
+bnx2x:firmware-bnx2x tg3:firmware-misc-nonfree qla2xxx:firmware-qlogic
+cpu-microcode-intel:intel-microcode cpu-microcode-amd:amd64-microcode"
+
+drivers () {
+	found=""
+	for d in /sys/bus/pci/devices/* /sys/bus/usb/devices/*; do
+		[ -e "$d/driver" ] || continue
+		drv=$(basename "$(readlink "$d/driver")")
+		for m in $MAP; do
+			[ "$drv" = "${m%%:*}" ] && found="$found $drv"
+		done
+	done
+	grep -q GenuineIntel /proc/cpuinfo && found="$found cpu-microcode-intel"
+	grep -q AuthenticAMD /proc/cpuinfo && found="$found cpu-microcode-amd"
+	echo $found | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/ $//'
+}
+
+packages () {
+	for drv in $(drivers); do
+		for m in $MAP; do
+			[ "$drv" = "${m%%:*}" ] && echo "${m#*:}"
+		done
+	done | sort -u | tr '\n' ' '
+}
+
+components () {	# $1 = add | del
+	for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+		[ -f "$f" ] || continue
+		if [ "$1" = add ]; then
+			sed -i -E '/^deb.*(debian|devuan)/{/non-free-firmware/!s/ main( |$)/ main non-free-firmware\1/}' "$f"
+		else
+			sed -i -E 's/ non-free-firmware//g' "$f"
+		fi
+	done
+}
+
+case "${1:-}" in
+drivers)
+	drivers ;;
+install)
+	P=$(packages)
+	[ -n "$P" ] || { echo "Nothing to install."; exit 0; }
+	echo "This installs CLOSED firmware: $P"
+	components add
+	apt-get update -q && apt-get install -y $P
+	echo "Done. Boot the \"linux\" kernel in GRUB: linux-libre does not load it." ;;
+remove)
+	P=$(dpkg-query -W -f '${Package} ${Section}\n' 2>/dev/null | \
+		awk '$2 ~ /non-free-firmware/ {print $1}')
+	[ -n "$P" ] && apt-get purge -y $P
+	components del
+	apt-get update -q
+	echo "Back to 100% free." ;;
+"")
+	D=$(drivers)
+	if [ -z "$D" ]; then
+		echo "No hardware needing closed firmware was found."
+	else
+		echo "Hardware not compatible with linux-libre: $D"
+		echo "Closed firmware it would need: $(packages)"
+		echo "To install it (your choice): ultimate-firmware install"
+	fi ;;
+*)
+	sed -n '2,6s/^# //p' "$0"; exit 1 ;;
+esac

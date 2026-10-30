@@ -13,22 +13,19 @@ chmod -R u+w "$W/iso"
 B=$W/iso/boot/isolinux
 
 echo "== initrd overlay"
+# The boot initrd (preamble.gz) only mounts the disc and unpacks the real
+# installer initrd, initrd.gz, with busybox cpio, which stops at the first
+# TRAILER!!! record. So the overlay is spliced in before that record.
 mkdir -p "$W/ov"
 cp -a "$HERE/overlay/." "$W/ov/"
-mkdir -p "$W/ov/var/lib/dpkg"
-zcat "$B/preamble.gz" | (cd "$W" && cpio -id --quiet var/lib/dpkg/status)
-cp "$W/var/lib/dpkg/status" "$W/ov/var/lib/dpkg/status"
-cat >> "$W/ov/var/lib/dpkg/status" <<STANZA
-
-Package: ultimate-choose
-Status: install ok unpacked
-Version: 1.0
-Depends: cdebconf-udeb
-Description: Debian Ultimate: choose init, kernel and desktop
-Installer-Menu-Item: 6400
-STANZA
-# A second cpio appended to the initrd overrides files of the first one.
-(cd "$W/ov" && find . | cpio -o -H newc --owner=0:0 --quiet | gzip -9) >> "$B/preamble.gz"
+zcat "$B/initrd.gz" > "$W/initrd.cpio"
+# Offset of the trailer record: a 110-byte newc header followed by its name.
+CUT=$(grep -abo '070701[0-9A-Fa-f]\{104\}TRAILER!!!' "$W/initrd.cpio" | tail -1 | cut -d: -f1)
+[ -n "$CUT" ] || { echo "cpio trailer not found"; exit 1; }
+head -c "$CUT" "$W/initrd.cpio" > "$W/new.cpio"
+(cd "$W/ov" && find . | cpio -o -H newc --owner=0:0 --quiet) >> "$W/new.cpio"
+gzip -9 < "$W/new.cpio" > "$B/initrd.gz"
+rm -f "$W/initrd.cpio" "$W/new.cpio"
 
 echo "== disc files and boot menu"
 cp -a "$HERE/cdrom/ultimate" "$W/iso/"
@@ -41,7 +38,7 @@ sed -i -e 's/^menu title Devuan GNU\/Linux/menu title Debian Ultimate (Devuan GN
 echo "== writing $OUT"
 mkdir -p "$(dirname "$OUT")"; rm -f "$OUT"
 xorriso -indev "$BASE" -outdev "$OUT" \
-	-map "$B/preamble.gz" /boot/isolinux/preamble.gz \
+	-map "$B/initrd.gz" /boot/isolinux/initrd.gz \
 	-map "$B/menu.cfg" /boot/isolinux/menu.cfg \
 	-map "$W/iso/md5sum.txt" /md5sum.txt \
 	-map "$W/iso/ultimate" /ultimate \

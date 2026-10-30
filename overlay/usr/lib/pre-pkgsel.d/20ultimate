@@ -1,6 +1,6 @@
 #!/bin/sh
 # Debian Ultimate: fix the Debian sources (systemd path) and install the chosen
-# kernel in /target, before tasksel installs the desktop.
+# kernel in /target next to the stock one, before tasksel installs the desktop.
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
@@ -47,13 +47,9 @@ esac
 
 db_subst ultimate/progress KERNEL "$KERNEL"
 db_progress INFO ultimate/progress
-if in-target sh -c "apt-get -q -y install ca-certificates && apt-get -q update && \
-	DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS"; then
-	# Remove the stock Debian/Devuan kernel only once the new one is in.
-	OLD=$(chroot /target dpkg-query -W -f '${Package}\n' 'linux-image-*' 2>/dev/null | \
-		grep -E '^linux-image-(amd64|[0-9].*-amd64)$' | grep -v -e liquorix -e xanmod || true)
-	[ -n "$OLD" ] && in-target apt-get -q -y purge $OLD || true
-else
+# The stock kernel stays as a second GRUB entry (fallback, and so closed
+# firmware still works with it); the newer chosen kernel boots by default.
+in-target sh -c "apt-get -q -y install ca-certificates && apt-get -q update && \
+	DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS" || \
 	logger -t ultimate "kernel $KERNEL failed to install; keeping the stock kernel"
-fi
 exit 0

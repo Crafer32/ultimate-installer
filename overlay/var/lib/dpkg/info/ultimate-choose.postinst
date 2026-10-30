@@ -3,30 +3,9 @@
 # is installed, then answers the stock Devuan questions underneath.
 set -e
 . /usr/share/debconf/confmodule
+[ -e /var/run/ultimate-debug ] && { exec 2>/dev/ttyS0; set -x; }
 
 ENV=/var/lib/ultimate.env
-
-# Drivers that only work (or work properly) with closed firmware.
-BLOB_DRIVERS="iwlwifi iwlmvm amdgpu radeon nouveau i915 xe rtw88_pci rtw89_pci rtl8192ce
-rtl8xxxu r8169 ath9k_htc ath10k_pci ath11k_pci ath12k brcmfmac b43 mt7921e mt7925e
-btusb btintel btrtl bnx2 bnx2x tg3 qla2xxx"
-
-detect_blobs () {
-	found=""
-	for d in /sys/bus/pci/devices/* /sys/bus/usb/devices/*; do
-		[ -e "$d/driver" ] || continue
-		drv=$(basename "$(readlink "$d/driver")")
-		for b in $BLOB_DRIVERS; do
-			[ "$drv" = "$b" ] && found="$found $drv"
-		done
-	done
-	# Anything the kernel tried to load firmware for during installation.
-	for drv in $(dmesg 2>/dev/null | sed -n 's/^\[[^]]*\] \([a-z0-9_]*\) [^:]*: .*[Ff]irmware.*/\1/p'); do
-		found="$found $drv"
-	done
-	grep -q -e GenuineIntel -e AuthenticAMD /proc/cpuinfo && found="$found cpu-microcode"
-	echo $found | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/ $//'
-}
 
 db_settitle ultimate/title || true
 
@@ -34,9 +13,9 @@ db_input critical ultimate/init || true
 db_go || exit 10
 db_get ultimate/init; INIT="$RET"
 
-BLOBS=$(detect_blobs)
+BLOBS=$(sh /usr/share/ultimate/ultimate-firmware drivers)
 if [ -n "$BLOBS" ]; then
-	NOTE="This hardware needs CLOSED firmware and will NOT work with linux-libre: $(echo "$BLOBS" | sed 's/ /, /g'). Ask its makers for free firmware."
+	NOTE="Hardware not compatible with linux-libre: $(echo "$BLOBS" | sed 's/ /, /g'). For it to work properly, selecting the \"linux\" kernel is recommended."
 else
 	NOTE="No hardware needing closed firmware was detected on this computer."
 fi
@@ -49,18 +28,19 @@ db_input critical ultimate/desktop || true
 db_go || exit 10
 db_get ultimate/desktop; DESKTOP="$RET"
 
-# Stock Devuan init question (choose-init) is answered here.
-# For systemd it gets an unknown value and does nothing: Debian already has it.
-db_set choose-init/select_init "$INIT"
-db_fset choose-init/select_init seen true
-
-# Desktop -> tasksel, so tasksel does not ask again.
+# Answer the stock Devuan questions (choose-init, tasksel, mirror) the same
+# way a preseed file does: their templates are not loaded yet, so db_set
+# would fail, but debconf-set-selections stores the answer and marks it seen.
+# For systemd, choose-init gets an unknown value and does nothing.
 case "$DESKTOP" in
 	none) TASKS="standard" ;;
 	*)    TASKS="desktop, $DESKTOP-desktop, standard" ;;
 esac
-db_set tasksel/first "$TASKS"
-db_fset tasksel/first seen true
+SEL=/tmp/ultimate.sel
+cat > $SEL <<EOF
+d-i choose-init/select_init select $INIT
+tasksel tasksel/first multiselect $TASKS
+EOF
 
 if [ "$INIT" = systemd ]; then
 	# Debian base: take it from deb.debian.org instead of the Devuan CD.
@@ -71,13 +51,20 @@ if [ "$INIT" = systemd ]; then
 		mount -o bind /run/ultimate-disk /cdrom/.disk
 	fi
 	ln -sf debian-archive-keyring.pgp /usr/share/keyrings/archive.gpg
-	for q in "mirror/country manual" "mirror/protocol http" \
-		 "mirror/http/hostname deb.debian.org" "mirror/http/directory /debian" \
-		 "mirror/http/proxy " "mirror/suite stable" "mirror/codename trixie"; do
-		db_set ${q%% *} "${q#* }"
-		db_fset ${q%% *} seen true
-	done
+	# Devuan's security/updates generators assume its /merged layout, so they
+	# are skipped; pre-pkgsel.d/20ultimate writes the Debian lines instead.
+	cat >> $SEL <<EOF
+d-i mirror/country string manual
+d-i mirror/protocol string http
+d-i mirror/http/hostname string deb.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+d-i mirror/suite string stable
+d-i mirror/codename string trixie
+d-i apt-setup/services-select multiselect
+EOF
 fi
+debconf-set-selections $SEL
 
 cat > $ENV <<EOF
 INIT=$INIT
