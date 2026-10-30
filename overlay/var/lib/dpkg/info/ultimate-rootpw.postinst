@@ -1,0 +1,18 @@
+#!/bin/sh
+# Debian Ultimate: "same password for root" checkbox, asked just before
+# user-setup (menu item 2400).
+#   ticked:   no root password question (root-login false, so the first user
+#             also gets sudo); finish-install.d/35ultimate then gives root
+#             the user's password.
+#   unticked: root-login true, so user-setup asks the root password too.
+set -e
+. /usr/share/debconf/confmodule
+
+db_settitle ultimate/rootpw-title || true
+db_input critical ultimate/rootsame || true
+db_go || exit 10
+db_get ultimate/rootsame
+[ "$RET" = same ] && LOGIN=false || LOGIN=true
+# user-setup's templates may not be loaded yet: same as a preseed line.
+echo "d-i passwd/root-login boolean $LOGIN" | debconf-set-selections
+exit 0

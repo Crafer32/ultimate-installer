@@ -3,7 +3,8 @@
 # kernel does not come with the distro, install it in /target instead of the
 # stock one, before tasksel installs the desktop.
 #   Genuen + linux-libre, Devuan + linux: the distro's own kernel, nothing to do
-#   Debian + linux-libre: linux-libre from the FSFLA freesh repo
+#   Debian/Devuan + linux-libre: linux-libre from the FSFLA freesh repo
+#   Genuen + s6: Genuen's s6 packages (as its own installer installs them)
 #   linux-locos: LocOS repo (its newer base-files turn the system into LocOS)
 #   PikaOS: its own sources package and its newest kernel
 set -e
@@ -25,19 +26,36 @@ EOF
 	[ "$C" = forky ] && sed -i '/forky-updates/d' /target/etc/apt/sources.list
 fi
 
-case "$DISTRO:$KERNEL" in
-debian:linux-libre)
+# Genuen's archive also has Devuan's sysv-rc as "required", so tasksel's
+# "standard" task wants it and clashes with openrc/s6. Hide the other inits
+# from apt until the install ends (finish-install.d/35ultimate removes this).
+if [ "$DISTRO" = genuen ]; then
+	[ "$INIT" = s6 ] && OTHER="sysvinit-core openrc" || OTHER="genuen-s6-init"
+	cat > /target/etc/apt/preferences.d/ultimate-init <<EOF
+Package: sysv-rc file-rc runit-init $OTHER
+Pin: release *
+Pin-Priority: -1
+EOF
+fi
+
+case "$DISTRO:$INIT:$KERNEL" in
+genuen:s6:*)
+	# The same packages as Genuen's choose-init; genuen-s6-init replaces
+	# sysvinit-core and openrc.
+	PKGS="execline s6 s6-rc s6-rc-policy s6-linux-init genuen-s6-init s6-linux-utils s6-portable-utils"
+	;;
+debian:*:linux-libre|devuan:*:linux-libre)
 	cp /usr/share/ultimate/freesh-archive-keyring.gpg $K/
 	echo "deb [signed-by=/etc/apt/keyrings/freesh-archive-keyring.gpg] https://linux-libre.fsfla.org/pub/linux-libre/freesh/ freesh main" > $S/freesh.list
 	# stable: the same 6.12 series as Debian; testing: the latest one.
 	[ "$BRANCH" = stable ] && PKGS="linux-libre-6.12" || PKGS="linux-libre"
 	;;
-pikaos:*)
+pikaos:*:*)
 	# apt-setup re-added the mirror with a "main" component PikaOS lacks.
 	: > /target/etc/apt/sources.list
 	PKGS="ca-certificates pika-sources"	# + newest kernel, picked below
 	;;
-*:linux-locos)
+*:*:linux-locos)
 	cp /usr/share/ultimate/loc-os-archive-keyring.gpg $K/
 	echo "deb [signed-by=/etc/apt/keyrings/loc-os-archive-keyring.gpg] http://fr.loc-os.com chill main" > $S/loc-os.list
 	PKGS=""	# versioned kernel packages only: the newest is picked below
@@ -60,6 +78,12 @@ linux-locos|pikaos)	# versioned kernel packages only: take the newest
 	;;
 esac
 
+# Genuen + s6 keeps Genuen's own kernel: only the init changes.
+if [ "$DISTRO" = genuen ]; then
+	in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS" || \
+		logger -t ultimate "s6 failed to install; keeping the stock init"
+	exit 0
+fi
 # Only one kernel in the installed system: the stock one is removed once
 # the chosen one is in (if that fails, the stock kernel stays).
 if in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS"; then

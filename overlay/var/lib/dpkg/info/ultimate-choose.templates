@@ -24,26 +24,29 @@ Description-es.UTF-8: Rama:
 
 Template: ultimate/init
 Type: select
-Choices-C: sysvinit, openrc, systemd, runit
-Choices: SysV (Default), OpenRC (Recommended), systemd, runit
-Choices-es.UTF-8: SysV (Por defecto), OpenRC (Recomendado), systemd, runit
+Choices-C: sysvinit, openrc, systemd, runit, s6
+Choices: SysV (Default), OpenRC (Recommended), systemd, runit, s6 (linux-libre only)
+Choices-es.UTF-8: SysV (Por defecto), OpenRC (Recomendado), systemd, runit, s6 (solo linux-libre)
 Default: sysvinit
 Description: Init system:
- SysV, OpenRC and runit install Devuan (Genuen with linux-libre) from this
- disc.
+ SysV, OpenRC and runit install Devuan from this disc; with linux-libre,
+ OpenRC installs Genuen, and SysV and runit get linux-libre from the
+ Internet.
  .
+ s6 comes from Genuen, so it needs linux-libre and an Internet connection.
  systemd installs Debian stable and needs an Internet connection.
 Description-es.UTF-8: Sistema de inicio (init):
- SysV, OpenRC y runit instalan Devuan (Genuen con linux-libre) desde este
- disco.
+ SysV, OpenRC y runit instalan Devuan desde este disco; con linux-libre,
+ OpenRC instala Genuen, y SysV y runit descargan linux-libre de Internet.
  .
+ s6 viene de Genuen, así que necesita linux-libre y conexión a Internet.
  systemd instala Debian stable y necesita conexión a Internet.
 
 Template: ultimate/kernel
 Type: select
-Choices-C: linux-libre, linux, linux-locos
-Choices: linux-libre (Default), linux (Recommended), linux-locos (LocOS)
-Choices-es.UTF-8: linux-libre (Por defecto), linux (Recomendado), linux-locos (LocOS)
+Choices-C: ${KERNELS_C}
+Choices: ${KERNELS}
+Choices-es.UTF-8: ${KERNELS}
 Default: linux-libre
 Description: Kernel:
  linux-libre is 100% free software: it will not load closed firmware or

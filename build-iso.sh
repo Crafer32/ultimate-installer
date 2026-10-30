@@ -21,6 +21,12 @@ echo "== initrd overlay"
 # TRAILER!!! record. So the overlay is spliced in before that record.
 mkdir -p "$W/ov"
 cp -a "$HERE/overlay/." "$W/ov/"
+# bin, lib, lib64 and sbin are symlinks into usr/ in the installer: a real
+# directory with that name in the overlay replaces the symlink when the kernel
+# unpacks the initrd, and the installer no longer boots.
+for d in bin lib lib64 sbin; do
+	[ ! -e "$W/ov/$d" ] || { echo "overlay/$d: use overlay/usr/$d"; exit 1; }
+done
 # zstd (+ its libraries) from the disc's own pool: PikaOS packages are
 # zstd-compressed and the installer's debootstrap needs zstdcat for them.
 for deb in zstd_ liblz4-1_ libxxhash0_ zlib1g_; do

@@ -2,7 +2,9 @@
 # Debian Ultimate: asks branch, init, kernel, repositories and desktop just
 # before the base system is installed, picks the distro they add up to and
 # answers the stock Devuan questions underneath.
-#   stable  + linux-libre + SysV/OpenRC/runit -> Genuen  (base from the disc)
+#   stable  + linux-libre + OpenRC/s6         -> Genuen  (base from the disc;
+#                                                s6 from its repo)
+#   stable  + linux-libre + SysV/runit        -> Devuan + linux-libre (FSFLA)
 #   stable  + linux/locos + SysV/OpenRC/runit -> Devuan  (base from the disc;
 #                                                LocOS once its repo is added)
 #   stable  + systemd                         -> Debian  (base from the net)
@@ -29,12 +31,16 @@ es*)	T_STABLE="stable (Por defecto)"; T_TESTING="testing (Debian testing)"
 	T_UNSTABLE="unstable (PikaOS, experimental)"
 	T_NOPIKA="(PikaOS necesita una CPU x86-64-v3 con AVX2: esta no lo es.)"
 	T_HW="Hardware no compatible con linux-libre: %s. Para que funcione bien, se recomienda elegir el núcleo \"linux\"."
-	T_NOHW="No se ha detectado hardware que necesite firmware cerrado en este equipo." ;;
+	T_NOHW="No se ha detectado hardware que necesite firmware cerrado en este equipo."
+	T_KERNELS="linux-libre (Por defecto), linux (Recomendado), linux-locos (LocOS)"
+	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
 *)	T_STABLE="stable (Default)"; T_TESTING="testing (Debian testing)"
 	T_UNSTABLE="unstable (PikaOS, experimental)"
 	T_NOPIKA="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
 	T_HW="Hardware not compatible with linux-libre: %s. For it to work properly, selecting the \"linux\" kernel is recommended."
-	T_NOHW="No hardware needing closed firmware was detected on this computer." ;;
+	T_NOHW="No hardware needing closed firmware was detected on this computer."
+	T_KERNELS="linux-libre (Default), linux (Recommended), linux-locos (LocOS)"
+	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
 esac
 
 # PikaOS is built for x86-64-v3 CPUs (AVX2, BMI2, FMA, MOVBE).
@@ -65,6 +71,15 @@ else
 	else
 		NOTE="$T_NOHW"
 	fi
+	# s6 only exists in Genuen: the screen is shown, with linux-libre only.
+	if [ "$INIT" = s6 ]; then
+		db_subst ultimate/kernel KERNELS_C "linux-libre"
+		db_subst ultimate/kernel KERNELS "${T_KERNELS%%,*}"
+		NOTE="$T_S6"
+	else
+		db_subst ultimate/kernel KERNELS_C "linux-libre, linux, linux-locos"
+		db_subst ultimate/kernel KERNELS "$T_KERNELS"
+	fi
 	db_subst ultimate/kernel HWNOTE "$NOTE"
 	ask ultimate/kernel; KERNEL="$RET"
 
@@ -81,7 +96,9 @@ if [ "$BRANCH" = unstable ]; then
 	DISTRO=pikaos
 elif [ "$INIT" = systemd ]; then
 	DISTRO=debian
-elif [ "$KERNEL" = linux-libre ]; then
+elif [ "$KERNEL" = linux-libre ] && [ "$INIT" = openrc -o "$INIT" = s6 ]; then
+	# Genuen has no plain SysV (its sysvinit-core needs openrc or s6 as rc),
+	# so SysV and runit with linux-libre are Devuan + FSFLA's linux-libre.
 	DISTRO=genuen
 else
 	DISTRO=devuan
@@ -104,6 +121,21 @@ hide_base_installable () {
 	mount -o bind /run/ultimate-disk /cdrom/.disk
 }
 has () { case " $COMP " in *" $1 "*) echo true ;; *) echo false ;; esac; }
+# GRUB goes to the disk chosen in guided partitioning or, when partitioning
+# by hand, to the disk that holds /. If neither is clear (manual LVM or
+# encryption), grub-installer still asks.
+grub_disk () {
+	if db_get partman-auto/select_disk 2>/dev/null && [ -n "$RET" ]; then
+		basename "$RET" | tr = /
+		return
+	fi
+	ROOT=$(awk '$2 == "/target" {print $1}' /proc/mounts)
+	case "$ROOT" in /dev/sd*|/dev/vd*|/dev/nvme*|/dev/mmcblk*) ;; *) return ;; esac
+	echo /dev/$(basename "$(dirname "$(readlink -f /sys/class/block/${ROOT#/dev/})")")
+}
+GRUBDEV=""
+# Only on the "Install" entry (it loads our preseed); "Expert install" asks.
+db_get preseed/file 2>/dev/null && [ -n "$RET" ] && GRUBDEV=$(grub_disk)
 SEL=/tmp/ultimate.sel
 cat > $SEL <<EOF
 d-i choose-init/select_init select $INIT
@@ -111,6 +143,11 @@ tasksel tasksel/first multiselect $TASKS
 d-i apt-setup/non-free-firmware boolean $(has non-free-firmware)
 d-i apt-setup/contrib boolean $(has contrib)
 d-i apt-setup/non-free boolean $(has non-free)
+EOF
+[ -n "$GRUBDEV" ] && cat >> $SEL <<EOF
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean true
+d-i grub-installer/bootdev string $GRUBDEV
 EOF
 
 case "$DISTRO" in

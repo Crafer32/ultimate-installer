@@ -1,4 +1,5 @@
-# Debian Ultimate: register the ultimate-choose step in the installer menu.
+# Debian Ultimate: register its steps in the installer menu: ultimate-rootpw
+# (just before user-setup, 2400) and ultimate-choose (before the base system).
 # (Appended here at boot: the initrd's own status file cannot be overwritten.)
 # The trailing blank line matters: anna appends more stanzas after this one.
 grep -q '^Package: ultimate-choose$' /var/lib/dpkg/status || cat >> /var/lib/dpkg/status <<STANZA
@@ -9,5 +10,12 @@ Version: 1.0
 Depends: cdebconf-udeb
 Description: Debian Ultimate: choose init, kernel and desktop
 Installer-Menu-Item: 6400
+
+Package: ultimate-rootpw
+Status: install ok unpacked
+Version: 1.0
+Depends: cdebconf-udeb
+Description: Debian Ultimate: same password for root
+Installer-Menu-Item: 2390
 
 STANZA

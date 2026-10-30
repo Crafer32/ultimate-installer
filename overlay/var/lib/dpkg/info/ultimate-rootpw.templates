@@ -1,0 +1,19 @@
+Template: ultimate/rootpw-title
+Type: title
+Description: Administrator (root) password
+Description-es.UTF-8: Contraseña del administrador (root)
+
+Template: ultimate/rootsame
+Type: multiselect
+Choices-C: same
+Choices: Use the same password for the administrator (root)
+Choices-es.UTF-8: Usar la misma contraseña para el administrador (root)
+Default: same
+Description: Administrator (root) password:
+ Ticked: you only type your user's password, and root gets the same one.
+ .
+ Unticked: the installer also asks for a separate root password.
+Description-es.UTF-8: Contraseña del administrador (root):
+ Marcada: solo escribe la contraseña de su usuario, y root tendrá la misma.
+ .
+ Desmarcada: el instalador también le pedirá una contraseña aparte para root.
