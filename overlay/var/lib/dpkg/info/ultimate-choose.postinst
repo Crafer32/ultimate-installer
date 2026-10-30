@@ -22,13 +22,28 @@ ask () {	# ask <question> -> $RET
 
 db_settitle ultimate/title || true
 
+# Texts built here follow the installer language (English or Spanish).
+db_get debian-installer/language || RET=en
+case "$RET" in
+es*)	T_STABLE="stable (Por defecto)"; T_TESTING="testing (Debian testing)"
+	T_UNSTABLE="unstable (PikaOS, experimental)"
+	T_NOPIKA="(PikaOS necesita una CPU x86-64-v3 con AVX2: esta no lo es.)"
+	T_HW="Hardware no compatible con linux-libre: %s. Para que funcione bien, se recomienda elegir el núcleo \"linux\"."
+	T_NOHW="No se ha detectado hardware que necesite firmware cerrado en este equipo." ;;
+*)	T_STABLE="stable (Default)"; T_TESTING="testing (Debian testing)"
+	T_UNSTABLE="unstable (PikaOS, experimental)"
+	T_NOPIKA="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
+	T_HW="Hardware not compatible with linux-libre: %s. For it to work properly, selecting the \"linux\" kernel is recommended."
+	T_NOHW="No hardware needing closed firmware was detected on this computer." ;;
+esac
+
 # PikaOS is built for x86-64-v3 CPUs (AVX2, BMI2, FMA, MOVBE).
-B_C="stable, testing"; B="stable (Default), testing (Debian testing)"; PIKANOTE=""
+B_C="stable, testing"; B="$T_STABLE, $T_TESTING"; PIKANOTE=""
 if grep -qw avx2 /proc/cpuinfo && grep -qw bmi2 /proc/cpuinfo && \
    grep -qw fma /proc/cpuinfo && grep -qw movbe /proc/cpuinfo; then
-	B_C="$B_C, unstable"; B="$B, unstable (PikaOS, experimental)"
+	B_C="$B_C, unstable"; B="$B, $T_UNSTABLE"
 else
-	PIKANOTE="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
+	PIKANOTE="$T_NOPIKA"
 fi
 db_subst ultimate/branch BRANCHES_C "$B_C"
 db_subst ultimate/branch BRANCHES "$B"
@@ -46,9 +61,9 @@ if [ "$BRANCH" = unstable ]; then
 	KERNEL=pikaos; COMP=""
 else
 	if [ -n "$BLOBS" ]; then
-		NOTE="Hardware not compatible with linux-libre: $(echo "$BLOBS" | sed 's/ /, /g'). For it to work properly, selecting the \"linux\" kernel is recommended."
+		NOTE=$(printf "$T_HW" "$(echo "$BLOBS" | sed 's/ /, /g')")
 	else
-		NOTE="No hardware needing closed firmware was detected on this computer."
+		NOTE="$T_NOHW"
 	fi
 	db_subst ultimate/kernel HWNOTE "$NOTE"
 	ask ultimate/kernel; KERNEL="$RET"

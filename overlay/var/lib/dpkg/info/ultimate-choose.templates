@@ -1,11 +1,13 @@
 Template: ultimate/title
 Type: title
 Description: Debian Ultimate: branch, init, kernel and desktop
+Description-es.UTF-8: Debian Ultimate: rama, init, núcleo y escritorio
 
 Template: ultimate/branch
 Type: select
 Choices-C: ${BRANCHES_C}
 Choices: ${BRANCHES}
+Choices-es.UTF-8: ${BRANCHES}
 Default: stable
 Description: Branch:
  stable installs Genuen, Devuan, Debian or LocOS, depending on the init and
@@ -13,26 +15,45 @@ Description: Branch:
  .
  testing installs Debian testing and unstable installs PikaOS; both use
  systemd and need an Internet connection. ${PIKANOTE}
+Description-es.UTF-8: Rama:
+ stable instala Genuen, Devuan, Debian o LocOS, según el init y el núcleo
+ que elija a continuación.
+ .
+ testing instala Debian testing y unstable instala PikaOS; las dos usan
+ systemd y necesitan conexión a Internet. ${PIKANOTE}
 
 Template: ultimate/init
 Type: select
 Choices-C: sysvinit, openrc, systemd, runit
 Choices: SysV (Default), OpenRC (Recommended), systemd, runit
+Choices-es.UTF-8: SysV (Por defecto), OpenRC (Recomendado), systemd, runit
 Default: sysvinit
 Description: Init system:
  SysV, OpenRC and runit install Devuan (Genuen with linux-libre) from this
  disc.
  .
  systemd installs Debian stable and needs an Internet connection.
+Description-es.UTF-8: Sistema de inicio (init):
+ SysV, OpenRC y runit instalan Devuan (Genuen con linux-libre) desde este
+ disco.
+ .
+ systemd instala Debian stable y necesita conexión a Internet.
 
 Template: ultimate/kernel
 Type: select
 Choices-C: linux-libre, linux, linux-locos
 Choices: linux-libre (Default), linux (Recommended), linux-locos (LocOS)
+Choices-es.UTF-8: linux-libre (Por defecto), linux (Recomendado), linux-locos (LocOS)
 Default: linux-libre
 Description: Kernel:
  linux-libre is 100% free software: it will not load closed firmware or
  CPU microcode updates (no fixes for Spectre-like CPU bugs).
+ .
+ ${HWNOTE}
+Description-es.UTF-8: Núcleo:
+ linux-libre es 100% software libre: no carga firmware cerrado ni
+ actualizaciones de microcódigo de la CPU (sin parches para fallos de CPU
+ tipo Spectre).
  .
  ${HWNOTE}
 
@@ -40,20 +61,29 @@ Template: ultimate/components
 Type: multiselect
 Choices-C: non-free-firmware, contrib, non-free
 Choices: non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software such as NVIDIA or Steam)
+Choices-es.UTF-8: non-free-firmware (firmware cerrado que carga el núcleo), contrib, non-free (software cerrado como NVIDIA o Steam)
 Default: non-free-firmware
 Description: Repositories:
  main is always included.
  .
  Extra repositories to enable:
+Description-es.UTF-8: Repositorios:
+ main siempre se incluye.
+ .
+ Repositorios adicionales que activar:
 
 Template: ultimate/desktop
 Type: select
 Choices-C: mate, xfce, cinnamon, gnome, gnome-flashback, kde, lxde, lxqt, none
 Choices: MATE (Default), Xfce (Recommended), Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)
+Choices-es.UTF-8: MATE (Por defecto), Xfce (Recomendado), Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, Ninguno (solo consola)
 Default: mate
 Description: Desktop:
  The desktop environment to install (downloaded from the Internet).
+Description-es.UTF-8: Escritorio:
+ El entorno de escritorio que instalar (se descarga de Internet).
 
 Template: ultimate/progress
 Type: text
 Description: Installing the ${KERNEL} kernel...
+Description-es.UTF-8: Instalando el núcleo ${KERNEL}...
