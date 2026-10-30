@@ -4,15 +4,15 @@ Description: Debian Ultimate: branch, init, kernel and desktop
 
 Template: ultimate/branch
 Type: select
-Choices-C: stable, testing, unstable
-Choices: stable (Default), testing (Debian testing), unstable (PikaOS, experimental)
+Choices-C: ${BRANCHES_C}
+Choices: ${BRANCHES}
 Default: stable
 Description: Branch:
  stable installs Genuen, Devuan, Debian or LocOS, depending on the init and
  kernel chosen next.
  .
  testing installs Debian testing and unstable installs PikaOS; both use
- systemd and need an Internet connection.
+ systemd and need an Internet connection. ${PIKANOTE}
 
 Template: ultimate/init
 Type: select

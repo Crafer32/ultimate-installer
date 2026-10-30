@@ -21,6 +21,15 @@ echo "== initrd overlay"
 # TRAILER!!! record. So the overlay is spliced in before that record.
 mkdir -p "$W/ov"
 cp -a "$HERE/overlay/." "$W/ov/"
+# zstd (+ its libraries) from the disc's own pool: PikaOS packages are
+# zstd-compressed and the installer's debootstrap needs zstdcat for them.
+for deb in zstd_ liblz4-1_ libxxhash0_ zlib1g_; do
+	f=$(find "$W/iso/pool" -name "${deb}*_amd64.deb" | head -n 1)
+	dpkg-deb -x "$f" "$W/zstd"
+done
+mkdir -p "$W/ov/usr/bin" "$W/ov/usr/lib/x86_64-linux-gnu"
+cp -a "$W/zstd/usr/bin/zstd" "$W/zstd/usr/bin/zstdcat" "$W/ov/usr/bin/"
+cp -a "$W/zstd/usr/lib/x86_64-linux-gnu/"lib*.so.* "$W/ov/usr/lib/x86_64-linux-gnu/"
 zcat "$B/initrd.gz" > "$W/initrd.cpio"
 # Offset of the trailer record: a 110-byte newc header followed by its name.
 CUT=$(grep -abo '070701[0-9A-Fa-f]\{104\}TRAILER!!!' "$W/initrd.cpio" | tail -1 | cut -d: -f1)

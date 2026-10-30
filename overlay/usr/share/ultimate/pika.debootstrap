@@ -2,4 +2,21 @@
 # ppa.pika-os.com). It is Debian sid, but its archive has no "main": packages
 # are split over these components, the same ones PikaOS's system.sources uses.
 USE_COMPONENTS="nest|raven|parrot|cockatiel|pigeon"
-. /usr/share/debootstrap/scripts/sid
+mirror_style release
+download_style apt
+finddebs_style from-indices
+variants - buildd fakechroot minbase
+# debian-common, with "extract $required" replaced by this (by ultimate-choose).
+# The installer's busybox tar cannot replace existing files, and PikaOS needs
+# that twice: in sid base-files ships the /lib -> usr/lib symlinks (so it goes
+# first), and some PikaOS packages ship the same files (it uses dpkg's
+# force-overwrite), so tar's -k (keep old files, which fails here) is dropped.
+ultimate_extract_required () {
+	EXTRACT_DEB_TAR_OPTIONS=$(echo "$EXTRACT_DEB_TAR_OPTIONS" | sed 's/-k//')
+	extract base-files
+	extract $(for p in $required; do [ "$p" = base-files ] || echo "$p"; done)
+	# and dpkg, which unpacks them all again in the second stage, too.
+	mkdir -p "$TARGET/etc/dpkg/dpkg.cfg.d"
+	echo force-overwrite > "$TARGET/etc/dpkg/dpkg.cfg.d/force-overwrite"
+}
+. /var/lib/ultimate-pika.common

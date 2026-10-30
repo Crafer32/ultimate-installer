@@ -22,6 +22,17 @@ ask () {	# ask <question> -> $RET
 
 db_settitle ultimate/title || true
 
+# PikaOS is built for x86-64-v3 CPUs (AVX2, BMI2, FMA, MOVBE).
+B_C="stable, testing"; B="stable (Default), testing (Debian testing)"; PIKANOTE=""
+if grep -qw avx2 /proc/cpuinfo && grep -qw bmi2 /proc/cpuinfo && \
+   grep -qw fma /proc/cpuinfo && grep -qw movbe /proc/cpuinfo; then
+	B_C="$B_C, unstable"; B="$B, unstable (PikaOS, experimental)"
+else
+	PIKANOTE="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
+fi
+db_subst ultimate/branch BRANCHES_C "$B_C"
+db_subst ultimate/branch BRANCHES "$B"
+db_subst ultimate/branch PIKANOTE "$PIKANOTE"
 ask ultimate/branch; BRANCH="$RET"
 if [ "$BRANCH" = stable ]; then
 	ask ultimate/init; INIT="$RET"
@@ -111,6 +122,8 @@ EOF
 pikaos)
 	hide_base_installable
 	ln -sf pika-archive-keyring.gpg /usr/share/keyrings/archive.gpg
+	sed 's/^\([[:space:]]*\)extract \$required$/\1ultimate_extract_required/' \
+		/usr/share/debootstrap/scripts/debian-common > /var/lib/ultimate-pika.common
 	if [ ! -e /usr/bin/wget.real ]; then
 		mv /usr/bin/wget /usr/bin/wget.real
 		cp /usr/share/ultimate/pika-wget /usr/bin/wget

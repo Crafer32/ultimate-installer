@@ -1,40 +1,67 @@
 # Debian Ultimate
 
-Not a distro: one netinstall ISO that installs "the Debian of always" (Devuan,
-no systemd) or "the new Debian" (Debian + systemd), with the kernel you choose.
-It is the stock Devuan installer (text mode) with a few touches.
+Not a distro: one netinstall ISO that installs the existing distro that your
+choices add up to, with that distro's own packages and repositories. It is the
+stock Devuan installer (text mode) plus one extra step and a few hooks.
 
-| Init | Kernel | Desktop |
-|---|---|---|
-| SysV (Default) | linux-libre (Default) | MATE (Default) |
-| OpenRC (Recommended) | linux (Recommended) | Xfce (Recommended) |
-| runit | | Cinnamon, GNOME, GNOME Flashback, KDE, LXDE, LXQt |
-| systemd -> Debian base | | none |
+## Choices (one screen, right after partitioning)
+
+| Branch | Init | Kernel | Installs |
+|---|---|---|---|
+| stable (Default) | SysV (Default), OpenRC (Recommended), runit | linux-libre (Default) | **Genuen** (libre Devuan), from the disc |
+| stable | SysV, OpenRC, runit | linux (Recommended) | **Devuan**, from the disc |
+| stable | SysV, OpenRC, runit | linux-locos | **Loc-OS** (Devuan + Loc-OS repo and kernel) |
+| stable | systemd | linux | **Debian** stable |
+| stable | systemd | linux-libre | **Debian Libre** (Debian main + linux-libre 6.12) |
+| testing | systemd | linux-libre / linux | **Debian testing** |
+| unstable (x86-64-v3 CPUs) | systemd | its own | **PikaOS** (experimental) |
+
+- Kernel screen warns about hardware that needs closed firmware
+  ("Hardware not compatible with linux-libre: ...").
+- Repositories: with linux-libre, `main` only. With any other kernel, `main`
+  is always included and `non-free-firmware` (checked), `contrib` and
+  `non-free` are offered.
+- Desktop: MATE (Default), Xfce (Recommended), Cinnamon, GNOME,
+  GNOME Flashback, KDE Plasma, LXDE, LXQt or none; downloaded from the net.
+- One kernel in the installed system. Closed firmware is opt-in:
+  `ultimate-firmware` lists, installs or removes it.
+
+The "Install" entry skips the boring questions (domain, root password,
+mirror, proxy, more discs, popularity-contest, tasksel); "Expert install" asks
+everything.
 
 ## How it works
-- `overlay/` is appended to the installer initrd (`preamble.gz`) as a second cpio.
-  - `ultimate-choose` (menu item 6400, right before the base system) asks the
-    three questions, answers Devuan's `choose-init` and `tasksel`, and for
-    systemd points debootstrap at deb.debian.org instead of the disc.
-    It also lists hardware that needs closed firmware (won't work with linux-libre).
-  - `pre-pkgsel.d/20ultimate` installs the chosen kernel (linux-libre 6.12,
-    same series as Debian stable, from the FSFLA freesh repo) and removes the
-    stock one: the installed system has a single kernel; the stock kernel stays as a fallback GRUB entry.
-  - `finish-install.d/35ultimate` installs `ultimate-firmware`; with linux-libre
-    it purges non-free firmware/microcode and leaves only `main`.
-- Closed firmware is opt-in: `ultimate-firmware` lists the hardware that needs
-  it, `ultimate-firmware install` adds only those packages, `remove` undoes it.
-- The menu step is registered by `lib/debian-installer-startup.d/S99ultimate`,
-  and the overlay is spliced into `initrd.gz` before its cpio trailer
-  (the preamble unpacks it with busybox cpio, which stops at the first one).
-
-## Tested (QEMU, 30-10-2026)
-- systemd + linux-libre -> Debian 13.7, boots 6.18.59-gnu (before switching to linux-libre-6.12).
-- SysV + linux-libre + MATE / none -> Devuan, no firmware, main only.
-- `cdrom/ultimate/preseed.cfg` skips boring questions (domain, root password,
-  mirror, proxy, more discs, popcon). Only the "Install" entry uses it;
-  "Expert install" asks everything.
+- `build-iso.sh` remasters the Devuan netinstall ISO and adds the Genuen
+  netinstall ISO as `/genuen.iso` (inside an image, apt-cdrom does not pick it
+  up as a second archive on Devuan installs).
+- `overlay/` is spliced into the installer initrd (`initrd.gz`) before its cpio
+  trailer (the boot preamble unpacks it with busybox cpio, which stops at the
+  first one); `S99ultimate` registers the extra step in the installer menu.
+- `ultimate-choose` (menu item 6400, before the base system) asks the
+  questions and answers the stock ones underneath (choose-init, tasksel,
+  apt-setup, mirror) with debconf-set-selections:
+  - Genuen: `/genuen.iso` is loop-mounted over `/cdrom`; Devuan's debootstrap
+    script with opensysusers instead of systemd-standalone-sysusers.
+  - Debian / PikaOS: `.disk/base_installable` is hidden so the base comes from
+    the mirror. PikaOS also needs a wget wrapper (its mirror only answers apt
+    user agents), its components, base-files extracted first, dpkg
+    force-overwrite and zstd (copied from the disc's pool).
+- `apt-setup/generators/39ultimate`: Genuen's disc as apt source.
+- `post-base-installer.d/92ultimate-pika`: PikaOS sources before the kernel.
+- `pre-pkgsel.d/20ultimate`: Debian sources, and the kernel when it does not
+  come with the distro (linux-libre from freesh, Loc-OS, PikaOS).
+- `finish-install.d/35ultimate`: `ultimate-firmware`, and no blobs with libre.
 
 ## Build
     ./build-iso.sh devuan_excalibur_6.1.1_amd64_netinstall.iso \
         genuen-6.0.1-netinstall-2026.10.11-amd64.iso out/debian-ultimate.iso
+
+## Credits
+Debian Ultimate only puts together the work of these projects:
+- [Genuen](https://genuen.org) — libre spin of Devuan
+- [Devuan](https://devuan.org) — Debian without systemd, and its installer
+- [Debian](https://www.debian.org) — the base of everything, and debian-installer
+- [Debian Libre](https://libre.debian.net) — the idea of Debian without non-free
+- [Loc-OS](https://loc-os.com) — Locos por Linux
+- [PikaOS](https://pika-os.com)
+- [GNU Linux-libre / FSFLA freesh](https://www.fsfla.org/ikiwiki/selibre/linux-libre/freesh)
