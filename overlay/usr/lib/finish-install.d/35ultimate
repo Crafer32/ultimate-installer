@@ -7,6 +7,10 @@ set -e
 install -m 755 /usr/share/ultimate/ultimate-firmware /target/usr/local/bin/ultimate-firmware
 # Genuen's disc source (apt-setup/generators/39ultimate) goes with the disc.
 sed -i '\|^deb \[trusted=yes\] file:/media/cdrom |d' /target/etc/apt/sources.list
+# One kernel: the installer's upgrade step may have added a newer build of it.
+OLD=$(chroot /target sh -c "dpkg-query -W -f '\${Package} \${Status}\n' 'linux-image-[0-9]*' | \
+	awk '/ installed\$/ && \$1 !~ /-dbg\$/ {print \$1}' | sort -V | head -n -1")
+[ -n "$OLD" ] && in-target apt-get -q -y purge $OLD || true
 [ "$KERNEL" = linux-libre ] || exit 0
 in-target /usr/local/bin/ultimate-firmware remove || true
 exit 0
