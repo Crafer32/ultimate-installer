@@ -17,8 +17,9 @@ It is the stock Devuan installer (text mode) with a few touches.
     three questions, answers Devuan's `choose-init` and `tasksel`, and for
     systemd points debootstrap at deb.debian.org instead of the disc.
     It also lists hardware that needs closed firmware (won't work with linux-libre).
-  - `pre-pkgsel.d/20ultimate` installs the chosen kernel (linux-libre from
-    the FSFLA freesh repo); the stock kernel stays as a fallback GRUB entry.
+  - `pre-pkgsel.d/20ultimate` installs the chosen kernel (linux-libre 6.12,
+    same series as Debian stable, from the FSFLA freesh repo) and removes the
+    stock one: the installed system has a single kernel; the stock kernel stays as a fallback GRUB entry.
   - `finish-install.d/35ultimate` installs `ultimate-firmware`; with linux-libre
     it purges non-free firmware/microcode and leaves only `main`.
 - Closed firmware is opt-in: `ultimate-firmware` lists the hardware that needs
@@ -28,7 +29,7 @@ It is the stock Devuan installer (text mode) with a few touches.
   (the preamble unpacks it with busybox cpio, which stops at the first one).
 
 ## Tested (QEMU, 30-10-2026)
-- systemd + linux-libre -> Debian 13.7, boots 6.18.59-gnu.
+- systemd + linux-libre -> Debian 13.7, boots 6.18.59-gnu (before switching to linux-libre-6.12).
 - SysV + linux-libre + MATE / none -> Devuan, no firmware, main only.
 - `cdrom/ultimate/preseed.cfg` skips boring questions (domain, root password,
   mirror, proxy, more discs, popcon). Only the "Install" entry uses it;
