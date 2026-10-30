@@ -26,8 +26,8 @@ Description: Kernel:
 
 Template: ultimate/desktop
 Type: select
-Choices-C: mate, xfce, lxde, lxqt, cinnamon, kde, none
-Choices: MATE (Default), Xfce (Recommended), LXDE, LXQt, Cinnamon, KDE Plasma, None (console only)
+Choices-C: mate, xfce, cinnamon, gnome, gnome-flashback, kde, lxde, lxqt, none
+Choices: MATE (Default), Xfce (Recommended), Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)
 Default: mate
 Description: Desktop:
  The desktop environment to install.

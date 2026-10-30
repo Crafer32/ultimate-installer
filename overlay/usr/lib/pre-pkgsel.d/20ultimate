@@ -49,7 +49,11 @@ db_subst ultimate/progress KERNEL "$KERNEL"
 db_progress INFO ultimate/progress
 # The stock kernel stays as a second GRUB entry (fallback, and so closed
 # firmware still works with it); the newer chosen kernel boots by default.
-in-target sh -c "apt-get -q -y install ca-certificates && apt-get -q update && \
+# "apt-get update" fails while the install disc is still listed as a source
+# (cdrom:// has no Release file here), so its exit status is not checked.
+in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update; \
 	DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS" || \
 	logger -t ultimate "kernel $KERNEL failed to install; keeping the stock kernel"
+# The freesh keyring package brings its own (mirror) source; keep only that one.
+[ -f $S/freesh.sources ] && rm -f $S/freesh.list
 exit 0

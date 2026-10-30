@@ -5,7 +5,7 @@
 # Runs after 30hw-detect, which may have installed firmware packages.
 set -e
 . /var/lib/ultimate.env
-install -m 755 /usr/share/ultimate/ultimate-firmware /target/usr/local/sbin/ultimate-firmware
+install -m 755 /usr/share/ultimate/ultimate-firmware /target/usr/local/bin/ultimate-firmware
 [ "$KERNEL" = linux-libre ] || exit 0
-in-target /usr/local/sbin/ultimate-firmware remove || true
+in-target /usr/local/bin/ultimate-firmware remove || true
 exit 0

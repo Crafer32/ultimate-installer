@@ -29,8 +29,7 @@ rm -f "$W/initrd.cpio" "$W/new.cpio"
 
 echo "== disc files and boot menu"
 cp -a "$HERE/cdrom/ultimate" "$W/iso/"
-sed -i -e 's/^menu title Devuan GNU\/Linux/menu title Debian Ultimate (Devuan GNU\/Linux/' \
-       -e 's/installation menu$/installation menu)/' \
+sed -i -e 's/^menu title .*/menu title Debian Ultimate installer/' \
        -e '/^label install$/,/append/ s|--- quiet|preseed/file=/cdrom/ultimate/preseed.cfg --- quiet|' \
        "$B/menu.cfg"
 (cd "$W/iso" && find . -type f ! -name md5sum.txt ! -path './boot/isolinux/*' -exec md5sum {} + > md5sum.txt)
