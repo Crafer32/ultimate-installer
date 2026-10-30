@@ -7,6 +7,7 @@
 #                                                LocOS once its repo is added)
 #   stable  + systemd                         -> Debian  (base from the net)
 #   testing                                   -> Debian testing (from the net)
+#   unstable                                  -> PikaOS (from the net)
 set -e
 . /usr/share/debconf/confmodule
 [ -e /var/run/ultimate-debug ] && { exec 2>/dev/ttyS0; set -x; }
@@ -29,23 +30,30 @@ else
 fi
 
 BLOBS=$(sh /usr/share/ultimate/ultimate-firmware drivers)
-if [ -n "$BLOBS" ]; then
-	NOTE="Hardware not compatible with linux-libre: $(echo "$BLOBS" | sed 's/ /, /g'). For it to work properly, selecting the \"linux\" kernel is recommended."
+# PikaOS comes with its own kernel and repositories: no kernel/repo questions.
+if [ "$BRANCH" = unstable ]; then
+	KERNEL=pikaos; COMP=""
 else
-	NOTE="No hardware needing closed firmware was detected on this computer."
-fi
-db_subst ultimate/kernel HWNOTE "$NOTE"
-ask ultimate/kernel; KERNEL="$RET"
+	if [ -n "$BLOBS" ]; then
+		NOTE="Hardware not compatible with linux-libre: $(echo "$BLOBS" | sed 's/ /, /g'). For it to work properly, selecting the \"linux\" kernel is recommended."
+	else
+		NOTE="No hardware needing closed firmware was detected on this computer."
+	fi
+	db_subst ultimate/kernel HWNOTE "$NOTE"
+	ask ultimate/kernel; KERNEL="$RET"
 
-# linux-libre gets main only; any other kernel lets the user pick the rest.
-COMP=""
-if [ "$KERNEL" != linux-libre ]; then
-	ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
+	# linux-libre gets main only; any other kernel lets the user pick the rest.
+	COMP=""
+	if [ "$KERNEL" != linux-libre ]; then
+		ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
+	fi
 fi
 
 ask ultimate/desktop; DESKTOP="$RET"
 
-if [ "$INIT" = systemd ]; then
+if [ "$BRANCH" = unstable ]; then
+	DISTRO=pikaos
+elif [ "$INIT" = systemd ]; then
 	DISTRO=debian
 elif [ "$KERNEL" = linux-libre ]; then
 	DISTRO=genuen
@@ -61,6 +69,14 @@ case "$DESKTOP" in
 	none) TASKS="standard" ;;
 	*)    TASKS="desktop, $DESKTOP-desktop, standard" ;;
 esac
+# Without .disk/base_installable the base system comes from the mirror.
+hide_base_installable () {
+	[ -e /cdrom/.disk/base_installable ] || return 0
+	mkdir -p /run/ultimate-disk
+	cp -a /cdrom/.disk/. /run/ultimate-disk/
+	rm -f /run/ultimate-disk/base_installable
+	mount -o bind /run/ultimate-disk /cdrom/.disk
+}
 has () { case " $COMP " in *" $1 "*) echo true ;; *) echo false ;; esac; }
 SEL=/tmp/ultimate.sel
 cat > $SEL <<EOF
@@ -73,10 +89,10 @@ EOF
 
 case "$DISTRO" in
 genuen)
-	# Genuen's own tree on this disc (/genuen) is mounted over the disc root,
-	# so everything that reads /cdrom from now on (base system, kernel, apt,
-	# choose-init) sees Genuen instead of Devuan.
-	grep -q Genuen /cdrom/.disk/info || mount -o bind /cdrom/genuen /cdrom
+	# Genuen's own netinstall ISO (/genuen.iso on this disc) is mounted over
+	# the disc root, so everything that reads /cdrom from now on (base system,
+	# kernel, apt, choose-init) sees Genuen instead of Devuan.
+	grep -q Genuen /cdrom/.disk/info || mount -o loop,ro /cdrom/genuen.iso /cdrom
 	# Genuen ships opensysusers instead of systemd-standalone-sysusers, which
 	# Devuan's debootstrap script adds to the base when cron is in it.
 	sed 's/systemd-standalone-sysusers/opensysusers/' \
@@ -92,14 +108,28 @@ d-i mirror/suite string stable
 d-i mirror/codename string excalibur
 EOF
 	;;
+pikaos)
+	hide_base_installable
+	ln -sf pika-archive-keyring.gpg /usr/share/keyrings/archive.gpg
+	if [ ! -e /usr/bin/wget.real ]; then
+		mv /usr/bin/wget /usr/bin/wget.real
+		cp /usr/share/ultimate/pika-wget /usr/bin/wget
+	fi
+	cat >> $SEL <<EOF
+d-i base-installer/debootstrap_script string /usr/share/ultimate/pika.debootstrap
+d-i mirror/country string manual
+d-i mirror/protocol string http
+d-i mirror/http/hostname string ppa.pika-os.com
+d-i mirror/http/directory string /
+d-i mirror/http/proxy string
+d-i mirror/suite string pika
+d-i mirror/codename string pika
+d-i apt-setup/services-select multiselect
+EOF
+	;;
 debian)
 	# Debian base: from deb.debian.org instead of the disc.
-	if [ -e /cdrom/.disk/base_installable ]; then
-		mkdir -p /run/ultimate-disk
-		cp -a /cdrom/.disk/. /run/ultimate-disk/
-		rm -f /run/ultimate-disk/base_installable
-		mount -o bind /run/ultimate-disk /cdrom/.disk
-	fi
+	hide_base_installable
 	ln -sf debian-archive-keyring.pgp /usr/share/keyrings/archive.gpg
 	[ "$BRANCH" = testing ] && CODENAME=forky || CODENAME=trixie
 	# Devuan's security/updates generators assume its /merged layout, so they

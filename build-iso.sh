@@ -1,6 +1,8 @@
 #!/bin/sh
 # Builds the Debian Ultimate ISO from the Devuan netinstall ISO (installer and
-# Devuan base) plus the Genuen netinstall ISO (Genuen base, under /genuen).
+# Devuan base) plus the Genuen netinstall ISO, copied as is to /genuen.iso and
+# loop-mounted when Genuen is chosen (inside an image, apt-cdrom does not pick
+# it up as a second archive on Devuan installs).
 # Usage: ./build-iso.sh devuan_..._netinstall.iso genuen-..._netinstall.iso out/debian-ultimate.iso
 set -eu
 BASE=$1; GENUEN=$2; OUT=$3
@@ -12,12 +14,6 @@ echo "== extracting $BASE"
 xorriso -osirrox on -indev "$BASE" -extract / "$W/iso" >/dev/null 2>&1
 chmod -R u+w "$W/iso"
 B=$W/iso/boot/isolinux
-echo "== extracting the Genuen archive from $GENUEN"
-mkdir -p "$W/iso/genuen"
-for d in .disk dists pool; do	# one by one: xorriso leaves each tree read-only
-	xorriso -osirrox on -indev "$GENUEN" -extract /$d "$W/iso/genuen/$d" >/dev/null 2>&1
-	chmod -R u+w "$W/iso/genuen"
-done
 
 echo "== initrd overlay"
 # The boot initrd (preamble.gz) only mounts the disc and unpacks the real
@@ -48,6 +44,6 @@ xorriso -indev "$BASE" -outdev "$OUT" \
 	-map "$B/menu.cfg" /boot/isolinux/menu.cfg \
 	-map "$W/iso/md5sum.txt" /md5sum.txt \
 	-map "$W/iso/ultimate" /ultimate \
-	-map "$W/iso/genuen" /genuen \
+	-map "$GENUEN" /genuen.iso \
 	-boot_image any replay 2>&1 | grep -E "FAILURE|SORRY|WARNING" || true
 ls -la "$OUT"

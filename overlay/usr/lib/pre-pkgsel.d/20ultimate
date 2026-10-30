@@ -5,6 +5,7 @@
 #   Genuen + linux-libre, Devuan + linux: the distro's own kernel, nothing to do
 #   Debian + linux-libre: linux-libre from the FSFLA freesh repo
 #   linux-locos: LocOS repo (its newer base-files turn the system into LocOS)
+#   PikaOS: its own sources package and its newest kernel
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
@@ -31,6 +32,11 @@ debian:linux-libre)
 	# stable: the same 6.12 series as Debian; testing: the latest one.
 	[ "$BRANCH" = stable ] && PKGS="linux-libre-6.12" || PKGS="linux-libre"
 	;;
+pikaos:*)
+	# apt-setup re-added the mirror with a "main" component PikaOS lacks.
+	: > /target/etc/apt/sources.list
+	PKGS="ca-certificates pika-sources"	# + newest kernel, picked below
+	;;
 *:linux-locos)
 	cp /usr/share/ultimate/loc-os-archive-keyring.gpg $K/
 	echo "deb [signed-by=/etc/apt/keyrings/loc-os-archive-keyring.gpg] http://fr.loc-os.com chill main" > $S/loc-os.list
@@ -46,10 +52,13 @@ db_progress INFO ultimate/progress
 # "apt-get update" fails while the install disc is still listed as a source
 # (cdrom:// has no Release file here), so its exit status is not checked.
 in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
-if [ "$KERNEL" = linux-locos ]; then
-	PKGS=$(chroot /target sh -c "apt-cache pkgnames linux-image- | grep -- '-loc-os\$' | sort -V | tail -n 1")
-	PKGS="$PKGS base-files"
-fi
+case "$KERNEL" in
+linux-locos|pikaos)	# versioned kernel packages only: take the newest
+	[ "$KERNEL" = pikaos ] && SUFFIX=-pikaos || SUFFIX=-loc-os
+	NEWEST=$(chroot /target sh -c "apt-cache pkgnames linux-image- | grep -- '$SUFFIX\$' | sort -V | tail -n 1")
+	[ "$KERNEL" = linux-locos ] && PKGS="$NEWEST base-files" || PKGS="$PKGS $NEWEST"
+	;;
+esac
 
 # Only one kernel in the installed system: the stock one is removed once
 # the chosen one is in (if that fails, the stock kernel stays).

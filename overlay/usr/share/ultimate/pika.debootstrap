@@ -1,0 +1,5 @@
+# Debian Ultimate: debootstrap script for PikaOS (suite "pika" on
+# ppa.pika-os.com). It is Debian sid, but its archive has no "main": packages
+# are split over these components, the same ones PikaOS's system.sources uses.
+USE_COMPONENTS="nest|raven|parrot|cockatiel|pigeon"
+. /usr/share/debootstrap/scripts/sid

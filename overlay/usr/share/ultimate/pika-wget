@@ -1,0 +1,4 @@
+#!/bin/sh
+# Debian Ultimate (PikaOS): ppa.pika-os.com sits behind an anti-bot shield that
+# only lets apt-like clients fetch its Release files. The last -U wins in wget.
+exec /usr/bin/wget.real "$@" -U "Debian APT-HTTP/1.3 (3.0.3)"
