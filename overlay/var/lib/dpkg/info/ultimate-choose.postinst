@@ -143,8 +143,10 @@ pikaos)
 		mv /usr/bin/wget /usr/bin/wget.real
 		cp /usr/share/ultimate/pika-wget /usr/bin/wget
 	fi
+	# PikaOS marks both man and man-db as required, and they conflict.
 	cat >> $SEL <<EOF
 d-i base-installer/debootstrap_script string /usr/share/ultimate/pika.debootstrap
+d-i base-installer/excludes string man-db
 d-i mirror/country string manual
 d-i mirror/protocol string http
 d-i mirror/http/hostname string ppa.pika-os.com
