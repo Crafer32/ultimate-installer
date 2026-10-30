@@ -39,7 +39,7 @@ Description: Kernel:
 Template: ultimate/components
 Type: multiselect
 Choices-C: non-free-firmware, contrib, non-free
-Choices: non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software: NVIDIA, Steam...)
+Choices: non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software such as NVIDIA or Steam)
 Default: non-free-firmware
 Description: Repositories:
  main is always included.
