@@ -1,0 +1,59 @@
+#!/bin/sh
+# Debian Ultimate: fix the Debian sources (systemd path) and install the chosen
+# kernel in /target, before tasksel installs the desktop.
+set -e
+. /usr/share/debconf/confmodule
+. /var/lib/ultimate.env
+
+K=/target/etc/apt/keyrings
+S=/target/etc/apt/sources.list.d
+
+if [ "$INIT" = systemd ]; then
+	# Devuan's apt-setup writes Devuan security/updates lines; use Debian's.
+	cat > /target/etc/apt/sources.list <<EOF
+deb http://deb.debian.org/debian trixie main non-free-firmware
+deb http://deb.debian.org/debian trixie-updates main non-free-firmware
+deb http://security.debian.org/debian-security trixie-security main non-free-firmware
+EOF
+fi
+
+mkdir -p $K $S
+case "$KERNEL" in
+linux-libre)
+	cp /usr/share/ultimate/freesh-archive-keyring.gpg $K/
+	echo "deb [signed-by=/etc/apt/keyrings/freesh-archive-keyring.gpg] https://linux-libre.fsfla.org/pub/linux-libre/freesh/ freesh main" > $S/freesh.list
+	PKGS="linux-libre-lts"
+	;;
+linux-xanmod)
+	cp /usr/share/ultimate/xanmod.gpg $K/
+	echo "deb [signed-by=/etc/apt/keyrings/xanmod.gpg] http://deb.xanmod.org trixie main" > $S/xanmod.list
+	# Pick the build for this CPU level (x86-64-v3 needs AVX2/BMI2/FMA/MOVBE).
+	if grep -q avx2 /proc/cpuinfo && grep -q bmi2 /proc/cpuinfo && \
+	   grep -q fma /proc/cpuinfo && grep -q movbe /proc/cpuinfo; then
+		PKGS="linux-xanmod-x64v3"
+	else
+		PKGS="linux-xanmod-x64v2"
+	fi
+	;;
+linux-liquorix)
+	cp /usr/share/ultimate/liquorix.gpg $K/
+	echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/liquorix.gpg] https://liquorix.net/debian trixie main" > $S/liquorix.list
+	PKGS="linux-image-liquorix-amd64"
+	;;
+*)
+	exit 0
+	;;
+esac
+
+db_subst ultimate/progress KERNEL "$KERNEL"
+db_progress INFO ultimate/progress
+if in-target sh -c "apt-get -q -y install ca-certificates && apt-get -q update && \
+	DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS"; then
+	# Remove the stock Debian/Devuan kernel only once the new one is in.
+	OLD=$(chroot /target dpkg-query -W -f '${Package}\n' 'linux-image-*' 2>/dev/null | \
+		grep -E '^linux-image-(amd64|[0-9].*-amd64)$' | grep -v -e liquorix -e xanmod || true)
+	[ -n "$OLD" ] && in-target apt-get -q -y purge $OLD || true
+else
+	logger -t ultimate "kernel $KERNEL failed to install; keeping the stock kernel"
+fi
+exit 0

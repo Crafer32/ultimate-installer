@@ -1,0 +1,16 @@
+#!/bin/sh
+# Debian Ultimate: with linux-libre, leave the system 100% free.
+# Runs after 30hw-detect, which may have installed firmware packages.
+set -e
+. /var/lib/ultimate.env
+[ "$KERNEL" = linux-libre ] || exit 0
+
+NONFREE=$(chroot /target dpkg-query -W -f '${Package} ${Section}\n' 2>/dev/null | \
+	awk '$2 ~ /^(non-free|non-free-firmware|contrib)\// {print $1}')
+[ -n "$NONFREE" ] && in-target apt-get -q -y purge $NONFREE || true
+
+# Only the free "main" component from now on.
+for f in /target/etc/apt/sources.list /target/etc/apt/sources.list.d/*.list; do
+	[ -f "$f" ] && sed -i -E 's/ (contrib|non-free-firmware|non-free)//g' "$f"
+done
+exit 0
