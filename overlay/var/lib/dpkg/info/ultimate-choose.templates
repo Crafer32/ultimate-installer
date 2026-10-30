@@ -1,22 +1,33 @@
 Template: ultimate/title
 Type: title
-Description: Debian Ultimate: init, kernel and desktop
+Description: Debian Ultimate: branch, init, kernel and desktop
+
+Template: ultimate/branch
+Type: select
+Choices-C: stable, testing
+Choices: stable (Default), testing (Debian testing)
+Default: stable
+Description: Branch:
+ stable installs Genuen, Devuan, Debian or LocOS, depending on the init and
+ kernel chosen next.
+ .
+ testing installs Debian testing (systemd) and needs an Internet connection.
 
 Template: ultimate/init
 Type: select
-Choices-C: sysvinit, openrc, runit, systemd
-Choices: SysV (Default), OpenRC (Recommended), runit, systemd
+Choices-C: sysvinit, openrc, systemd, runit
+Choices: SysV (Default), OpenRC (Recommended), systemd, runit
 Default: sysvinit
 Description: Init system:
- SysV, OpenRC and runit install Devuan (base without systemd).
+ SysV, OpenRC and runit install Devuan (Genuen with linux-libre) from this
+ disc.
  .
- systemd installs Debian stable instead and needs an Internet connection,
- because this disc only carries Devuan packages.
+ systemd installs Debian stable and needs an Internet connection.
 
 Template: ultimate/kernel
 Type: select
-Choices-C: linux-libre, linux
-Choices: linux-libre (Default), linux (Recommended)
+Choices-C: linux-libre, linux, linux-locos
+Choices: linux-libre (Default), linux (Recommended), linux-locos (LocOS)
 Default: linux-libre
 Description: Kernel:
  linux-libre is 100% free software: it will not load closed firmware or
@@ -24,13 +35,23 @@ Description: Kernel:
  .
  ${HWNOTE}
 
+Template: ultimate/components
+Type: multiselect
+Choices-C: non-free-firmware, contrib, non-free
+Choices: non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software: NVIDIA, Steam...)
+Default: non-free-firmware
+Description: Repositories:
+ main is always included.
+ .
+ Extra repositories to enable:
+
 Template: ultimate/desktop
 Type: select
 Choices-C: mate, xfce, cinnamon, gnome, gnome-flashback, kde, lxde, lxqt, none
 Choices: MATE (Default), Xfce (Recommended), Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)
 Default: mate
 Description: Desktop:
- The desktop environment to install.
+ The desktop environment to install (downloaded from the Internet).
 
 Template: ultimate/progress
 Type: text

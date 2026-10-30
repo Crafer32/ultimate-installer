@@ -1,0 +1,20 @@
+#!/bin/sh
+# Debian Ultimate (Genuen): 40cdrom would unmount /cdrom (where Genuen's tree
+# is mounted over the disc) and remount the plain Devuan disc, so it is skipped
+# (it needs .disk/base_installable) and Genuen's tree is added as a source.
+set -e
+. /var/lib/ultimate.env
+[ "$DISTRO" = genuen ] || exit 0
+file="$1"
+
+if [ -e /cdrom/.disk/base_installable ]; then
+	mkdir -p /run/ultimate-disk
+	cp -a /cdrom/.disk/. /run/ultimate-disk/
+	rm -f /run/ultimate-disk/base_installable
+	mount -o bind /run/ultimate-disk /cdrom/.disk
+fi
+mkdir -p /target/media/cdrom
+grep -q ' /target/media/cdrom ' /proc/mounts || \
+	mount -o bind /cdrom /target/media/cdrom
+# Like apt-cdrom, the install medium is trusted (disc Release files are unsigned).
+echo "deb [trusted=yes] file:/media/cdrom excalibur main" >> "$file"

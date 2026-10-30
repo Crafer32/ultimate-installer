@@ -1,29 +1,40 @@
 #!/bin/sh
-# Debian Ultimate: fix the Debian sources (systemd path) and install the chosen
-# kernel in /target instead of the stock one, before tasksel installs the desktop.
+# Debian Ultimate: write the Debian sources (systemd path) and, when the
+# kernel does not come with the distro, install it in /target instead of the
+# stock one, before tasksel installs the desktop.
+#   Genuen + linux-libre, Devuan + linux: the distro's own kernel, nothing to do
+#   Debian + linux-libre: linux-libre from the FSFLA freesh repo
+#   linux-locos: LocOS repo (its newer base-files turn the system into LocOS)
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
 
 K=/target/etc/apt/keyrings
 S=/target/etc/apt/sources.list.d
+mkdir -p $K $S
 
-if [ "$INIT" = systemd ]; then
+if [ "$DISTRO" = debian ]; then
 	# Devuan's apt-setup writes Devuan security/updates lines; use Debian's.
+	[ "$BRANCH" = testing ] && C=forky || C=trixie
 	cat > /target/etc/apt/sources.list <<EOF
-deb http://deb.debian.org/debian trixie main non-free-firmware
-deb http://deb.debian.org/debian trixie-updates main non-free-firmware
-deb http://security.debian.org/debian-security trixie-security main non-free-firmware
+deb http://deb.debian.org/debian $C main $COMP
+deb http://deb.debian.org/debian $C-updates main $COMP
+deb http://security.debian.org/debian-security $C-security main $COMP
 EOF
+	[ "$C" = forky ] && sed -i '/forky-updates/d' /target/etc/apt/sources.list
 fi
 
-mkdir -p $K $S
-case "$KERNEL" in
-linux-libre)
+case "$DISTRO:$KERNEL" in
+debian:linux-libre)
 	cp /usr/share/ultimate/freesh-archive-keyring.gpg $K/
 	echo "deb [signed-by=/etc/apt/keyrings/freesh-archive-keyring.gpg] https://linux-libre.fsfla.org/pub/linux-libre/freesh/ freesh main" > $S/freesh.list
-	# Same 6.12 series as Debian/Devuan stable (freesh also has newer ones).
-	PKGS="linux-libre-6.12"
+	# stable: the same 6.12 series as Debian; testing: the latest one.
+	[ "$BRANCH" = stable ] && PKGS="linux-libre-6.12" || PKGS="linux-libre"
+	;;
+*:linux-locos)
+	cp /usr/share/ultimate/loc-os-archive-keyring.gpg $K/
+	echo "deb [signed-by=/etc/apt/keyrings/loc-os-archive-keyring.gpg] http://fr.loc-os.com chill main" > $S/loc-os.list
+	PKGS=""	# versioned kernel packages only: the newest is picked below
 	;;
 *)
 	exit 0
@@ -32,12 +43,17 @@ esac
 
 db_subst ultimate/progress KERNEL "$KERNEL"
 db_progress INFO ultimate/progress
-# Only one kernel in the installed system: the stock one is removed once
-# the chosen one is in (if that fails, the stock kernel stays).
 # "apt-get update" fails while the install disc is still listed as a source
 # (cdrom:// has no Release file here), so its exit status is not checked.
-if in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update; \
-	DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS"; then
+in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
+if [ "$KERNEL" = linux-locos ]; then
+	PKGS=$(chroot /target sh -c "apt-cache pkgnames linux-image- | grep -- '-loc-os\$' | sort -V | tail -n 1")
+	PKGS="$PKGS base-files"
+fi
+
+# Only one kernel in the installed system: the stock one is removed once
+# the chosen one is in (if that fails, the stock kernel stays).
+if in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS"; then
 	OLD=$(chroot /target dpkg-query -W -f '${Package} ${Status}\n' 'linux-image-*' 2>/dev/null | \
 		awk '/ installed$/ {print $1}' | grep -E '^linux-image-(amd64|[0-9].*-amd64)$' || true)
 	[ -n "$OLD" ] && in-target apt-get -q -y purge $OLD || true

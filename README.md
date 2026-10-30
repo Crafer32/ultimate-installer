@@ -36,4 +36,5 @@ It is the stock Devuan installer (text mode) with a few touches.
   "Expert install" asks everything.
 
 ## Build
-    ./build-iso.sh devuan_excalibur_6.1.1_amd64_netinstall.iso out/debian-ultimate.iso
+    ./build-iso.sh devuan_excalibur_6.1.1_amd64_netinstall.iso \
+        genuen-6.0.1-netinstall-2026.10.11-amd64.iso out/debian-ultimate.iso

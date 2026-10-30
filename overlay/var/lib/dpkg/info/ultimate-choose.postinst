@@ -1,17 +1,32 @@
 #!/bin/sh
-# Debian Ultimate: asks init, kernel and desktop just before the base system
-# is installed, then answers the stock Devuan questions underneath.
+# Debian Ultimate: asks branch, init, kernel, repositories and desktop just
+# before the base system is installed, picks the distro they add up to and
+# answers the stock Devuan questions underneath.
+#   stable  + linux-libre + SysV/OpenRC/runit -> Genuen  (base from the disc)
+#   stable  + linux/locos + SysV/OpenRC/runit -> Devuan  (base from the disc;
+#                                                LocOS once its repo is added)
+#   stable  + systemd                         -> Debian  (base from the net)
+#   testing                                   -> Debian testing (from the net)
 set -e
 . /usr/share/debconf/confmodule
 [ -e /var/run/ultimate-debug ] && { exec 2>/dev/ttyS0; set -x; }
 
 ENV=/var/lib/ultimate.env
 
+ask () {	# ask <question> -> $RET
+	db_input critical "$1" || true
+	db_go || exit 10
+	db_get "$1"
+}
+
 db_settitle ultimate/title || true
 
-db_input critical ultimate/init || true
-db_go || exit 10
-db_get ultimate/init; INIT="$RET"
+ask ultimate/branch; BRANCH="$RET"
+if [ "$BRANCH" = stable ]; then
+	ask ultimate/init; INIT="$RET"
+else
+	INIT=systemd
+fi
 
 BLOBS=$(sh /usr/share/ultimate/ultimate-firmware drivers)
 if [ -n "$BLOBS" ]; then
@@ -20,30 +35,65 @@ else
 	NOTE="No hardware needing closed firmware was detected on this computer."
 fi
 db_subst ultimate/kernel HWNOTE "$NOTE"
-db_input critical ultimate/kernel || true
-db_go || exit 10
-db_get ultimate/kernel; KERNEL="$RET"
+ask ultimate/kernel; KERNEL="$RET"
 
-db_input critical ultimate/desktop || true
-db_go || exit 10
-db_get ultimate/desktop; DESKTOP="$RET"
+# linux-libre gets main only; any other kernel lets the user pick the rest.
+COMP=""
+if [ "$KERNEL" != linux-libre ]; then
+	ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
+fi
 
-# Answer the stock Devuan questions (choose-init, tasksel, mirror) the same
-# way a preseed file does: their templates are not loaded yet, so db_set
-# would fail, but debconf-set-selections stores the answer and marks it seen.
+ask ultimate/desktop; DESKTOP="$RET"
+
+if [ "$INIT" = systemd ]; then
+	DISTRO=debian
+elif [ "$KERNEL" = linux-libre ]; then
+	DISTRO=genuen
+else
+	DISTRO=devuan
+fi
+
+# Answer the stock Devuan questions the same way a preseed file does: their
+# templates are not loaded yet, so db_set would fail, but
+# debconf-set-selections stores the answer and marks it as seen.
 # For systemd, choose-init gets an unknown value and does nothing.
 case "$DESKTOP" in
 	none) TASKS="standard" ;;
 	*)    TASKS="desktop, $DESKTOP-desktop, standard" ;;
 esac
+has () { case " $COMP " in *" $1 "*) echo true ;; *) echo false ;; esac; }
 SEL=/tmp/ultimate.sel
 cat > $SEL <<EOF
 d-i choose-init/select_init select $INIT
 tasksel tasksel/first multiselect $TASKS
+d-i apt-setup/non-free-firmware boolean $(has non-free-firmware)
+d-i apt-setup/contrib boolean $(has contrib)
+d-i apt-setup/non-free boolean $(has non-free)
 EOF
 
-if [ "$INIT" = systemd ]; then
-	# Debian base: take it from deb.debian.org instead of the Devuan CD.
+case "$DISTRO" in
+genuen)
+	# Genuen's own tree on this disc (/genuen) is mounted over the disc root,
+	# so everything that reads /cdrom from now on (base system, kernel, apt,
+	# choose-init) sees Genuen instead of Devuan.
+	grep -q Genuen /cdrom/.disk/info || mount -o bind /cdrom/genuen /cdrom
+	# Genuen ships opensysusers instead of systemd-standalone-sysusers, which
+	# Devuan's debootstrap script adds to the base when cron is in it.
+	sed 's/systemd-standalone-sysusers/opensysusers/' \
+		/usr/share/debootstrap/scripts/ceres > /var/lib/ultimate-genuen.debootstrap
+	cat >> $SEL <<EOF
+d-i base-installer/debootstrap_script string /var/lib/ultimate-genuen.debootstrap
+d-i base-installer/includes string genuen-archive-keyring
+d-i mirror/country string manual
+d-i mirror/protocol string http
+d-i mirror/http/hostname string packages.genuen.org
+d-i mirror/http/directory string /merged
+d-i mirror/suite string stable
+d-i mirror/codename string excalibur
+EOF
+	;;
+debian)
+	# Debian base: from deb.debian.org instead of the disc.
 	if [ -e /cdrom/.disk/base_installable ]; then
 		mkdir -p /run/ultimate-disk
 		cp -a /cdrom/.disk/. /run/ultimate-disk/
@@ -51,6 +101,7 @@ if [ "$INIT" = systemd ]; then
 		mount -o bind /run/ultimate-disk /cdrom/.disk
 	fi
 	ln -sf debian-archive-keyring.pgp /usr/share/keyrings/archive.gpg
+	[ "$BRANCH" = testing ] && CODENAME=forky || CODENAME=trixie
 	# Devuan's security/updates generators assume its /merged layout, so they
 	# are skipped; pre-pkgsel.d/20ultimate writes the Debian lines instead.
 	cat >> $SEL <<EOF
@@ -59,16 +110,20 @@ d-i mirror/protocol string http
 d-i mirror/http/hostname string deb.debian.org
 d-i mirror/http/directory string /debian
 d-i mirror/http/proxy string
-d-i mirror/suite string stable
-d-i mirror/codename string trixie
+d-i mirror/suite string $BRANCH
+d-i mirror/codename string $CODENAME
 d-i apt-setup/services-select multiselect
 EOF
-fi
+	;;
+esac
 debconf-set-selections $SEL
 
 cat > $ENV <<EOF
+BRANCH=$BRANCH
+DISTRO=$DISTRO
 INIT=$INIT
 KERNEL=$KERNEL
+COMP="$COMP"
 DESKTOP=$DESKTOP
 BLOBS="$BLOBS"
 EOF
