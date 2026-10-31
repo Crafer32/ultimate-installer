@@ -24,8 +24,8 @@ Description-es.UTF-8: Rama:
 Template: ultimate/init
 Type: select
 Choices-C: sysvinit, openrc, systemd, runit, s6
-Choices: SysV (Default), OpenRC (Recommended), systemd, runit, s6 (linux-libre only)
-Choices-es.UTF-8: SysV (Por defecto), OpenRC (Recomendado), systemd, runit, s6 (solo linux-libre)
+Choices: SysV, OpenRC, systemd, runit, s6 (linux-libre only)
+Choices-es.UTF-8: SysV, OpenRC, systemd, runit, s6 (solo linux-libre)
 Default: sysvinit
 Description: Init system:
  SysV, OpenRC and runit install Devuan from this disc; with linux-libre,
@@ -68,8 +68,8 @@ Description-es.UTF-8: Repositorios:
 Template: ultimate/desktop
 Type: select
 Choices-C: mate, xfce, cinnamon, gnome, gnome-flashback, kde, lxde, lxqt, none
-Choices: MATE (Default), Xfce (Recommended), Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)
-Choices-es.UTF-8: MATE (Por defecto), Xfce (Recomendado), Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, Ninguno (solo consola)
+Choices: MATE, Xfce, Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)
+Choices-es.UTF-8: MATE, Xfce, Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, Ninguno (solo consola)
 Default: mate
 Description: Desktop:
  The desktop environment to install (downloaded from the Internet).

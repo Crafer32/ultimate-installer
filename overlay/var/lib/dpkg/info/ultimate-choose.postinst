@@ -27,19 +27,19 @@ db_settitle ultimate/title || true
 # Texts built here follow the installer language (English or Spanish).
 db_get debian-installer/language || RET=en
 case "$RET" in
-es*)	T_STABLE="stable (Por defecto)"; T_TESTING="testing (Debian testing)"
+es*)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
 	T_UNSTABLE="unstable (PikaOS, experimental)"
 	T_NOPIKA="(PikaOS necesita una CPU x86-64-v3 con AVX2: esta no lo es.)"
 	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
 	T_NOHW="Este equipo no necesita firmware cerrado: linux-libre funcionará bien."
-	T_KERNELS="linux-libre (Por defecto), linux (Recomendado), linux-locos (LocOS)"
+	T_KERNELS="linux-libre, linux (Recomendado), linux-locos (LocOS)"
 	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
-*)	T_STABLE="stable (Default)"; T_TESTING="testing (Debian testing)"
+*)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
 	T_UNSTABLE="unstable (PikaOS, experimental)"
 	T_NOPIKA="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
 	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
 	T_NOHW="This computer needs no closed firmware: linux-libre will work fine."
-	T_KERNELS="linux-libre (Default), linux (Recommended), linux-locos (LocOS)"
+	T_KERNELS="linux-libre, linux (Recommended), linux-locos (LocOS)"
 	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
 esac
 
