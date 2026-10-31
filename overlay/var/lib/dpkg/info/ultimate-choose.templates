@@ -16,11 +16,10 @@ Description: Branch:
  testing installs Debian testing and unstable installs PikaOS; both use
  systemd and need an Internet connection. ${PIKANOTE}
 Description-es.UTF-8: Rama:
- stable instala Genuen, Devuan, Debian o LocOS, según el init y el núcleo
- que elija a continuación.
+ stable: Genuen, Devuan, Debian o LocOS, según el init y el núcleo.
  .
- testing instala Debian testing y unstable instala PikaOS; las dos usan
- systemd y necesitan conexión a Internet. ${PIKANOTE}
+ testing: Debian testing. unstable: PikaOS. Las dos usan systemd y
+ necesitan Internet. ${PIKANOTE}
 
 Template: ultimate/init
 Type: select
@@ -36,11 +35,11 @@ Description: Init system:
  s6 comes from Genuen, so it needs linux-libre and an Internet connection.
  systemd installs Debian stable and needs an Internet connection.
 Description-es.UTF-8: Sistema de inicio (init):
- SysV, OpenRC y runit instalan Devuan desde este disco; con linux-libre,
- OpenRC instala Genuen, y SysV y runit descargan linux-libre de Internet.
+ SysV, OpenRC y runit: Devuan, desde este disco. Con linux-libre, OpenRC
+ instala Genuen, y SysV y runit descargan linux-libre de Internet.
  .
- s6 viene de Genuen, así que necesita linux-libre y conexión a Internet.
- systemd instala Debian stable y necesita conexión a Internet.
+ s6: Genuen, solo con linux-libre (necesita Internet).
+ systemd: Debian stable (necesita Internet).
 
 Template: ultimate/kernel
 Type: select
@@ -49,31 +48,22 @@ Choices: ${KERNELS}
 Choices-es.UTF-8: ${KERNELS}
 Default: linux-libre
 Description: Kernel:
- linux-libre is 100% free software: it will not load closed firmware or
- CPU microcode updates (no fixes for Spectre-like CPU bugs).
- .
  ${HWNOTE}
 Description-es.UTF-8: Núcleo:
- linux-libre es 100% software libre: no carga firmware cerrado ni
- actualizaciones de microcódigo de la CPU (sin parches para fallos de CPU
- tipo Spectre).
- .
  ${HWNOTE}
 
 Template: ultimate/components
 Type: multiselect
 Choices-C: non-free-firmware, contrib, non-free
 Choices: non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software such as NVIDIA or Steam)
-Choices-es.UTF-8: non-free-firmware (firmware cerrado que carga el núcleo), contrib, non-free (software cerrado como NVIDIA o Steam)
+Choices-es.UTF-8: non-free-firmware (firmware cerrado para el hardware), contrib, non-free (software cerrado: NVIDIA, Steam...)
 Default: non-free-firmware
 Description: Repositories:
  main is always included.
  .
  Extra repositories to enable:
 Description-es.UTF-8: Repositorios:
- main siempre se incluye.
- .
- Repositorios adicionales que activar:
+ main siempre está activado. Repositorios adicionales:
 
 Template: ultimate/desktop
 Type: select
@@ -84,7 +74,7 @@ Default: mate
 Description: Desktop:
  The desktop environment to install (downloaded from the Internet).
 Description-es.UTF-8: Escritorio:
- El entorno de escritorio que instalar (se descarga de Internet).
+ Se descarga de Internet.
 
 Template: ultimate/progress
 Type: text
