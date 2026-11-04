@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate (Genuen): 40cdrom would unmount /cdrom (where Genuen's tree
+# Ultimate Installer (Genuen): 40cdrom would unmount /cdrom (where Genuen's tree
 # is mounted over the disc) and remount the plain Devuan disc, so it is skipped
 # (it needs .disk/base_installable) and Genuen's tree is added as a source.
 set -e

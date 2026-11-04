@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate (LMDE): Debian stable + Cinnamon + linux + systemd is LMDE.
+# Ultimate Installer (LMDE): Debian stable + Cinnamon + linux + systemd is LMDE.
 # Linux Mint's repository goes on top of Debian's, preferred the way LMDE
 # does it (priority 700), and its Cinnamon edition is installed from it.
 # Runs after 25ultimate-xlibre, so XLibre (if chosen) is already in place.

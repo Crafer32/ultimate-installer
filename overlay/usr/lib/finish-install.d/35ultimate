@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate: closed firmware is opt-in. With linux-libre the system is
+# Ultimate Installer: closed firmware is opt-in. With linux-libre the system is
 # left 100% free; `ultimate-firmware` lets the user add it later, knowingly.
 # Runs after 30hw-detect, which may have installed firmware packages.
 set -e

@@ -1,8 +1,10 @@
-# Debian Ultimate
+# Ultimate Installer
 
-Not a distro: one netinstall ISO that installs the existing distro that your
-choices add up to, with that distro's own packages and repositories. It is the
-stock Devuan installer (text mode) plus one extra step and a few hooks.
+Not a distro: one Debian/Devuan netinstall ISO that installs the existing
+Devuan/Debian-family distro that your choices add up to, with that distro's own
+packages and repositories. It is the stock Debian/Devuan installer
+(debian-installer, text mode, as Devuan ships it) plus one extra step and a
+few hooks.
 
 ## Choices (one screen, right after partitioning)
 
@@ -16,7 +18,6 @@ stock Devuan installer (text mode) plus one extra step and a few hooks.
 | stable | systemd | linux | **Debian** stable (**LMDE** with Cinnamon) |
 | stable | systemd | linux-libre | **Debian Libre** (Debian main + linux-libre 6.12) |
 | testing | systemd | linux-libre / linux | **Debian testing** |
-| unstable (x86-64-v3 CPUs) | systemd | its own | **PikaOS** (experimental) |
 
 - Kernel screen warns about hardware that needs closed firmware
   ("Hardware not compatible with linux-libre: ..."). With s6 it only lists
@@ -34,7 +35,7 @@ stock Devuan installer (text mode) plus one extra step and a few hooks.
   Plasma and GNOME keep Wayland, their official session; experimental
   Wayland sessions are not offered. XLibre comes from
   [xlibre-debian](https://xlibre-debian.github.io) (`debian` or `devuan`,
-  `stable` or `testing`; stable also needs the distro's backports). It is
+  `stable` or `testing`; stable also needs the Debian/Devuan backports). It is
   installed before the desktop, so it takes the place of Xorg (it provides
   `xorg` and `xserver-xorg`), and Xorg's server is pinned out.
 - One kernel in the installed system. Closed firmware is opt-in:
@@ -61,14 +62,11 @@ unticked, the root password is asked too.
   apt-setup, mirror) with debconf-set-selections:
   - Genuen: `/genuen.iso` is loop-mounted over `/cdrom`; Devuan's debootstrap
     script with opensysusers instead of systemd-standalone-sysusers.
-  - Debian / PikaOS: `.disk/base_installable` is hidden so the base comes from
-    the mirror. PikaOS also needs a wget wrapper (its mirror only answers apt
-    user agents), its components, base-files extracted first, dpkg
-    force-overwrite and zstd (copied from the disc's pool).
+  - Debian / LMDE: `.disk/base_installable` is hidden so the base comes from
+    the mirror.
 - `apt-setup/generators/39ultimate`: Genuen's disc as apt source.
-- `post-base-installer.d/92ultimate-pika`: PikaOS sources before the kernel.
 - `pre-pkgsel.d/20ultimate`: Debian sources, the kernel when it does not
-  come with the distro (linux-libre from freesh, Loc-OS, PikaOS), and s6.
+  come with the distro (linux-libre from freesh, Loc-OS), and s6.
 - `pre-pkgsel.d/25ultimate-xlibre`: XLibre's repository and packages.
 - `pre-pkgsel.d/30ultimate-lmde`: Linux Mint's repository and Cinnamon.
 - `finish-install.d/36ultimate-session`: the login screen starts the X11
@@ -77,17 +75,20 @@ unticked, the root password is asked too.
 
 ## Build
     ./build-iso.sh devuan_excalibur_6.1.1_amd64_netinstall.iso \
-        genuen-6.0.1-netinstall-2026.10.11-amd64.iso out/debian-ultimate.iso
+        genuen-6.0.1-netinstall-2026.10.11-amd64.iso out/ultimate-installer.iso
 
 ## Credits
-Debian Ultimate only puts together the work of these projects:
+Ultimate Installer only puts together the work of these Debian/Devuan projects:
 - [Genuen](https://genuen.org) — libre spin of Devuan
 - [Devuan](https://devuan.org) — Debian without systemd, and its installer
 - [Debian](https://www.debian.org) — the base of everything, and debian-installer
 - [Debian Libre](https://libre.debian.net) — the idea of Debian without non-free
 - [Loc-OS](https://loc-os.com) — Locos por Linux
-- [PikaOS](https://pika-os.com)
 - [Linux Mint / LMDE](https://linuxmint.com)
 - [XLibre](https://github.com/X11Libre/xserver) and its Debian packages,
   [xlibre-debian](https://xlibre-debian.github.io) (NexusSfan)
 - [GNU Linux-libre / FSFLA freesh](https://www.fsfla.org/ikiwiki/selibre/linux-libre/freesh)
+
+## License
+GPL-3.0-or-later (see `LICENSE`). debian-installer, which this builds on, is
+GPL-2.0-or-later.

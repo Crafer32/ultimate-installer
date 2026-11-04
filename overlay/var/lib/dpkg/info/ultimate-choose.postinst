@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate: asks branch, init, kernel, repositories, desktop and
+# Ultimate Installer: asks branch, init, kernel, repositories, desktop and
 # graphics system just before the base system is installed, picks the distro
 # they add up to and answers the stock Devuan questions underneath.
 #   stable  + linux-libre + OpenRC/s6         -> Genuen  (base from the disc;
@@ -10,7 +10,6 @@
 #   stable  + systemd                         -> Debian  (base from the net)
 #   stable  + systemd + linux + Cinnamon      -> LMDE    (Debian + Mint's repo)
 #   testing                                   -> Debian testing (from the net)
-#   unstable                                  -> PikaOS (from the net)
 set -e
 . /usr/share/debconf/confmodule
 [ -e /var/run/ultimate-debug ] && { exec 2>/dev/ttyS0; set -x; }
@@ -28,33 +27,16 @@ db_settitle ultimate/title || true
 # Texts built here follow the installer language (English or Spanish).
 db_get debian-installer/language || RET=en
 case "$RET" in
-es*)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
-	T_UNSTABLE="unstable (PikaOS, experimental)"
-	T_NOPIKA="(PikaOS necesita una CPU x86-64-v3 con AVX2: esta no lo es.)"
-	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
+es*)	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
 	T_NOHW="Este equipo no necesita firmware cerrado: linux-libre funcionará bien."
 	T_KERNELS="linux-libre, linux (Recomendado), linux-locos (LocOS)"
 	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
-*)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
-	T_UNSTABLE="unstable (PikaOS, experimental)"
-	T_NOPIKA="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
-	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
+*)	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
 	T_NOHW="This computer needs no closed firmware: linux-libre will work fine."
 	T_KERNELS="linux-libre, linux (Recommended), linux-locos (LocOS)"
 	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
 esac
 
-# PikaOS is built for x86-64-v3 CPUs (AVX2, BMI2, FMA, MOVBE).
-B_C="stable, testing"; B="$T_STABLE, $T_TESTING"; PIKANOTE=""
-if grep -qw avx2 /proc/cpuinfo && grep -qw bmi2 /proc/cpuinfo && \
-   grep -qw fma /proc/cpuinfo && grep -qw movbe /proc/cpuinfo; then
-	B_C="$B_C, unstable"; B="$B, $T_UNSTABLE"
-else
-	PIKANOTE="$T_NOPIKA"
-fi
-db_subst ultimate/branch BRANCHES_C "$B_C"
-db_subst ultimate/branch BRANCHES "$B"
-db_subst ultimate/branch PIKANOTE "$PIKANOTE"
 ask ultimate/branch; BRANCH="$RET"
 if [ "$BRANCH" = stable ]; then
 	ask ultimate/init; INIT="$RET"
@@ -63,36 +45,31 @@ else
 fi
 
 BLOBS=$(sh /usr/share/ultimate/ultimate-firmware drivers)
-# PikaOS comes with its own kernel and repositories: no kernel/repo questions.
-if [ "$BRANCH" = unstable ]; then
-	KERNEL=pikaos; COMP=""
+if [ -n "$BLOBS" ]; then
+	NOTE=$(printf "$T_HW" "$(echo "$BLOBS" | sed 's/ /, /g')")
 else
-	if [ -n "$BLOBS" ]; then
-		NOTE=$(printf "$T_HW" "$(echo "$BLOBS" | sed 's/ /, /g')")
-	else
-		NOTE="$T_NOHW"
-	fi
-	# s6 only exists in Genuen: the screen is shown, with linux-libre only.
-	if [ "$INIT" = s6 ]; then
-		db_subst ultimate/kernel KERNELS_C "linux-libre"
-		db_subst ultimate/kernel KERNELS "${T_KERNELS%%,*}"
-		NOTE="$T_S6"
-	elif [ "$BRANCH" = testing ]; then
-		# LocOS is built on stable: it is not offered with testing.
-		db_subst ultimate/kernel KERNELS_C "linux-libre, linux"
-		db_subst ultimate/kernel KERNELS "${T_KERNELS%, *}"
-	else
-		db_subst ultimate/kernel KERNELS_C "linux-libre, linux, linux-locos"
-		db_subst ultimate/kernel KERNELS "$T_KERNELS"
-	fi
-	db_subst ultimate/kernel HWNOTE "$NOTE"
-	ask ultimate/kernel; KERNEL="$RET"
+	NOTE="$T_NOHW"
+fi
+# s6 only exists in Genuen: the screen is shown, with linux-libre only.
+if [ "$INIT" = s6 ]; then
+	db_subst ultimate/kernel KERNELS_C "linux-libre"
+	db_subst ultimate/kernel KERNELS "${T_KERNELS%%,*}"
+	NOTE="$T_S6"
+elif [ "$BRANCH" = testing ]; then
+	# LocOS is built on stable: it is not offered with testing.
+	db_subst ultimate/kernel KERNELS_C "linux-libre, linux"
+	db_subst ultimate/kernel KERNELS "${T_KERNELS%, *}"
+else
+	db_subst ultimate/kernel KERNELS_C "linux-libre, linux, linux-locos"
+	db_subst ultimate/kernel KERNELS "$T_KERNELS"
+fi
+db_subst ultimate/kernel HWNOTE "$NOTE"
+ask ultimate/kernel; KERNEL="$RET"
 
-	# linux-libre gets main only; any other kernel lets the user pick the rest.
-	COMP=""
-	if [ "$KERNEL" != linux-libre ]; then
-		ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
-	fi
+# linux-libre gets main only; any other kernel lets the user pick the rest.
+COMP=""
+if [ "$KERNEL" != linux-libre ]; then
+	ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
 fi
 
 ask ultimate/desktop; DESKTOP="$RET"
@@ -100,16 +77,14 @@ ask ultimate/desktop; DESKTOP="$RET"
 # Graphics system, only for X11 desktops: X11 (Xorg, from the distro) or
 # XLibre (from its own repository). Desktops whose official session is
 # Wayland (Plasma, GNOME) keep it; experimental Wayland sessions (Xfce,
-# Cinnamon, LXQt) are not offered. PikaOS brings its own: no question.
-case "$BRANCH:$DESKTOP" in
-unstable:*|*:none)	GFX=default ;;
-*:kde|*:gnome)		GFX=wayland ;;
-*)			ask ultimate/graphics; GFX="$RET" ;;
+# Cinnamon, LXQt) are not offered.
+case "$DESKTOP" in
+none)		GFX=default ;;
+kde|gnome)	GFX=wayland ;;
+*)		ask ultimate/graphics; GFX="$RET" ;;
 esac
 
-if [ "$BRANCH" = unstable ]; then
-	DISTRO=pikaos
-elif [ "$INIT" = systemd ] && [ "$BRANCH:$KERNEL:$DESKTOP" = stable:linux:cinnamon ]; then
+if [ "$INIT" = systemd ] && [ "$BRANCH:$KERNEL:$DESKTOP" = stable:linux:cinnamon ]; then
 	# Debian stable + Cinnamon is what LMDE is: Linux Mint's packages on top.
 	DISTRO=lmde
 elif [ "$INIT" = systemd ]; then
@@ -189,29 +164,6 @@ d-i mirror/http/hostname string packages.genuen.org
 d-i mirror/http/directory string /merged
 d-i mirror/suite string stable
 d-i mirror/codename string excalibur
-EOF
-	;;
-pikaos)
-	hide_base_installable
-	ln -sf pika-archive-keyring.gpg /usr/share/keyrings/archive.gpg
-	sed 's/^\([[:space:]]*\)extract \$required$/\1ultimate_extract_required/' \
-		/usr/share/debootstrap/scripts/debian-common > /var/lib/ultimate-pika.common
-	if [ ! -e /usr/bin/wget.real ]; then
-		mv /usr/bin/wget /usr/bin/wget.real
-		cp /usr/share/ultimate/pika-wget /usr/bin/wget
-	fi
-	# PikaOS marks both man and man-db as required, and they conflict.
-	cat >> $SEL <<EOF
-d-i base-installer/debootstrap_script string /usr/share/ultimate/pika.debootstrap
-d-i base-installer/excludes string man-db
-d-i mirror/country string manual
-d-i mirror/protocol string http
-d-i mirror/http/hostname string ppa.pika-os.com
-d-i mirror/http/directory string /
-d-i mirror/http/proxy string
-d-i mirror/suite string pika
-d-i mirror/codename string pika
-d-i apt-setup/services-select multiselect
 EOF
 	;;
 debian|lmde)

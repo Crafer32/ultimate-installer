@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate: XLibre instead of Xorg. Its repository (xlibre-debian, by
+# Ultimate Installer: XLibre instead of Xorg. Its repository (xlibre-debian, by
 # NexusSfan) goes in before tasksel, and xlibre (which provides xorg and
 # xserver-xorg) is installed first, so the desktop task takes it instead of
 # Xorg. Xorg's server is pinned out so a later upgrade cannot bring it back.

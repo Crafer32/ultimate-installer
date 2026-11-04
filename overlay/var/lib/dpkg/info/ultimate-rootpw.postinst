@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate: "same password for root" checkbox, asked just before
+# Ultimate Installer: "same password for root" checkbox, asked just before
 # user-setup (menu item 2400).
 #   ticked:   no root password question (root-login false, so the first user
 #             also gets sudo); finish-install.d/35ultimate then gives root

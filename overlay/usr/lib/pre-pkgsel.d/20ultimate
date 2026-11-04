@@ -1,12 +1,11 @@
 #!/bin/sh
-# Debian Ultimate: write the Debian sources (systemd path) and, when the
+# Ultimate Installer: write the Debian sources (systemd path) and, when the
 # kernel does not come with the distro, install it in /target instead of the
 # stock one, before tasksel installs the desktop.
 #   Genuen + linux-libre, Devuan + linux: the distro's own kernel, nothing to do
 #   Debian/Devuan + linux-libre: linux-libre from the FSFLA freesh repo
 #   Genuen + s6: Genuen's s6 packages (as its own installer installs them)
 #   linux-locos: LocOS repo (its newer base-files turn the system into LocOS)
-#   PikaOS: its own sources package and its newest kernel
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
@@ -50,11 +49,6 @@ debian:*:linux-libre|devuan:*:linux-libre)
 	# stable: the same 6.12 series as Debian; testing: the latest one.
 	[ "$BRANCH" = stable ] && PKGS="linux-libre-6.12" || PKGS="linux-libre"
 	;;
-pikaos:*:*)
-	# apt-setup re-added the mirror with a "main" component PikaOS lacks.
-	: > /target/etc/apt/sources.list
-	PKGS="ca-certificates pika-sources"	# + newest kernel, picked below
-	;;
 *:*:linux-locos)
 	cp /usr/share/ultimate/loc-os-archive-keyring.gpg $K/
 	echo "deb [signed-by=/etc/apt/keyrings/loc-os-archive-keyring.gpg] http://fr.loc-os.com chill main" > $S/loc-os.list
@@ -70,13 +64,10 @@ db_progress INFO ultimate/progress
 # "apt-get update" fails while the install disc is still listed as a source
 # (cdrom:// has no Release file here), so its exit status is not checked.
 in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
-case "$KERNEL" in
-linux-locos|pikaos)	# versioned kernel packages only: take the newest
-	[ "$KERNEL" = pikaos ] && SUFFIX=-pikaos || SUFFIX=-loc-os
-	NEWEST=$(chroot /target sh -c "apt-cache pkgnames linux-image- | grep -- '$SUFFIX\$' | sort -V | tail -n 1")
-	[ "$KERNEL" = linux-locos ] && PKGS="$NEWEST base-files" || PKGS="$PKGS $NEWEST"
-	;;
-esac
+if [ "$KERNEL" = linux-locos ]; then	# versioned kernel packages only: take the newest
+	NEWEST=$(chroot /target sh -c "apt-cache pkgnames linux-image- | grep -- '-loc-os\$' | sort -V | tail -n 1")
+	PKGS="$NEWEST base-files"
+fi
 
 # Genuen + s6 keeps Genuen's own kernel: only the init changes.
 if [ "$DISTRO" = genuen ]; then

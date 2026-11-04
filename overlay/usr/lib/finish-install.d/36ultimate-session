@@ -1,5 +1,5 @@
 #!/bin/sh
-# Debian Ultimate: the login screen (LightDM for MATE, Xfce, Cinnamon and
+# Ultimate Installer: the login screen (LightDM for MATE, Xfce, Cinnamon and
 # LXDE; SDDM for LXQt; GDM for GNOME Flashback) starts the X11 session of
 # the desktop chosen, also with XLibre. Plasma and GNOME keep Wayland, their
 # official session, so nothing is changed for them.

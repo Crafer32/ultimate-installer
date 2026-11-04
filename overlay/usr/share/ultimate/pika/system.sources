@@ -1,9 +1,0 @@
-X-Repolib-Name: PikaOS System Sources
-Enabled: yes
-Types: deb
-URIs: http://ppa.pika-os.com/
-Suites: pika
-Components: nest raven parrot cockatiel pigeon
-X-Repolib-ID: system
-X-Repolib-Default-Mirror: https://ppa.pika-os.com/
-Signed-By: /etc/apt/keyrings/pika-keyring.gpg.key

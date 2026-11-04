@@ -1,25 +1,24 @@
 Template: ultimate/title
 Type: title
-Description: Debian Ultimate: branch, init, kernel and desktop
-Description-es.UTF-8: Debian Ultimate: rama, init, núcleo y escritorio
+Description: Ultimate Installer: branch, init, kernel and desktop
+Description-es.UTF-8: Ultimate Installer: rama, init, núcleo y escritorio
 
 Template: ultimate/branch
 Type: select
-Choices-C: ${BRANCHES_C}
-Choices: ${BRANCHES}
-Choices-es.UTF-8: ${BRANCHES}
+Choices-C: stable, testing
+Choices: stable, testing (Debian testing)
+Choices-es.UTF-8: stable, testing (Debian testing)
 Default: stable
 Description: Branch:
  stable installs Genuen, Devuan, Debian or LocOS, depending on the init and
  kernel chosen next.
  .
- testing installs Debian testing and unstable installs PikaOS; both use
- systemd and need an Internet connection. ${PIKANOTE}
+ testing installs Debian testing; it uses systemd and needs an Internet
+ connection.
 Description-es.UTF-8: Rama:
  stable: Genuen, Devuan, Debian o LocOS, según el init y el núcleo.
  .
- testing: Debian testing. unstable: PikaOS. Las dos usan systemd y
- necesitan Internet. ${PIKANOTE}
+ testing: Debian testing. Usa systemd y necesita Internet.
 
 Template: ultimate/init
 Type: select
