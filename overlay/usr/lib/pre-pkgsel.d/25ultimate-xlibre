@@ -1,0 +1,41 @@
+#!/bin/sh
+# Debian Ultimate: XLibre instead of Xorg. Its repository (xlibre-debian, by
+# NexusSfan) goes in before tasksel, and xlibre (which provides xorg and
+# xserver-xorg) is installed first, so the desktop task takes it instead of
+# Xorg. Xorg's server is pinned out so a later upgrade cannot bring it back.
+# On stable, XLibre needs the distro's backports.
+set -e
+. /usr/share/debconf/confmodule
+. /var/lib/ultimate.env
+[ "$GFX" = xlibre ] || exit 0
+
+K=/target/etc/apt/keyrings
+S=/target/etc/apt/sources.list.d
+mkdir -p $K $S
+cp /usr/share/ultimate/xlibre-archive-keyring.gpg $K/
+case "$DISTRO" in debian|lmde) SYS=debian ;; *) SYS=devuan ;; esac
+echo "deb [signed-by=/etc/apt/keyrings/xlibre-archive-keyring.gpg] https://xlibre-debian.github.io/$SYS/ main $BRANCH" > $S/xlibre.list
+T=""
+if [ "$BRANCH" = stable ]; then
+	if [ "$SYS" = debian ]; then
+		echo "deb http://deb.debian.org/debian trixie-backports main" > $S/backports.list
+		T=trixie-backports
+	else
+		echo "deb http://deb.devuan.org/merged excalibur-backports main" > $S/backports.list
+		T=excalibur-backports
+	fi
+fi
+cat > /target/etc/apt/preferences.d/ultimate-xlibre <<PIN
+Package: xorg xserver-xorg xserver-xorg-core xserver-xorg-video-all xserver-xorg-input-all
+Pin: release *
+Pin-Priority: -1
+PIN
+
+db_progress INFO ultimate/progress-xlibre
+in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
+if ! in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y ${T:+-t $T} install xlibre"; then
+	# Without XLibre the desktop still gets Xorg.
+	logger -t ultimate "XLibre failed to install; using Xorg"
+	rm -f /target/etc/apt/preferences.d/ultimate-xlibre $S/xlibre.list
+fi
+exit 0

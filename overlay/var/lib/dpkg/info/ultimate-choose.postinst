@@ -1,13 +1,14 @@
 #!/bin/sh
-# Debian Ultimate: asks branch, init, kernel, repositories and desktop just
-# before the base system is installed, picks the distro they add up to and
-# answers the stock Devuan questions underneath.
+# Debian Ultimate: asks branch, init, kernel, repositories, desktop and
+# graphics system just before the base system is installed, picks the distro
+# they add up to and answers the stock Devuan questions underneath.
 #   stable  + linux-libre + OpenRC/s6         -> Genuen  (base from the disc;
 #                                                s6 from its repo)
 #   stable  + linux-libre + SysV/runit        -> Devuan + linux-libre (FSFLA)
 #   stable  + linux/locos + SysV/OpenRC/runit -> Devuan  (base from the disc;
 #                                                LocOS once its repo is added)
 #   stable  + systemd                         -> Debian  (base from the net)
+#   stable  + systemd + linux + Cinnamon      -> LMDE    (Debian + Mint's repo)
 #   testing                                   -> Debian testing (from the net)
 #   unstable                                  -> PikaOS (from the net)
 set -e
@@ -33,14 +34,16 @@ es*)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
 	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
 	T_NOHW="Este equipo no necesita firmware cerrado: linux-libre funcionará bien."
 	T_KERNELS="linux-libre, linux (Recomendado), linux-locos (LocOS)"
-	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
+	T_S6="s6 viene de Genuen y solo funciona con linux-libre."
+	T_EXP="experimental" ;;
 *)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
 	T_UNSTABLE="unstable (PikaOS, experimental)"
 	T_NOPIKA="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
 	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
 	T_NOHW="This computer needs no closed firmware: linux-libre will work fine."
 	T_KERNELS="linux-libre, linux (Recommended), linux-locos (LocOS)"
-	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
+	T_S6="s6 comes from Genuen and only works with linux-libre."
+	T_EXP="experimental" ;;
 esac
 
 # PikaOS is built for x86-64-v3 CPUs (AVX2, BMI2, FMA, MOVBE).
@@ -96,8 +99,33 @@ fi
 
 ask ultimate/desktop; DESKTOP="$RET"
 
+# Graphics system. X11 (Xorg) comes with the distro; XLibre from its own
+# repository; Wayland only where the desktop has a Wayland session in that
+# branch (Debian 13 / Devuan 6: Xfce, Cinnamon and LXQt experimental, Plasma
+# and GNOME by default; MATE, LXDE and Flashback: X11 only).
+# GNOME in testing is Wayland only and PikaOS brings its own: no question.
+case "$BRANCH:$DESKTOP" in
+unstable:*|*:none)	GFX=default ;;
+testing:gnome)		GFX=wayland ;;
+*)
+	case "$DESKTOP" in
+	kde|gnome)	G_C="wayland, x11, xlibre"; G="Wayland, X11 (Xorg), XLibre"; DEF=wayland ;;
+	xfce|cinnamon|lxqt) G_C="x11, xlibre, wayland"; G="X11 (Xorg), XLibre, Wayland ($T_EXP)"; DEF=x11 ;;
+	*)		G_C="x11, xlibre"; G="X11 (Xorg), XLibre"; DEF=x11 ;;
+	esac
+	db_subst ultimate/graphics GFX_C "$G_C"
+	db_subst ultimate/graphics GFX "$G"
+	# The default depends on the desktop, so it is set here, not in the template.
+	db_set ultimate/graphics "$DEF"
+	ask ultimate/graphics; GFX="$RET"
+	;;
+esac
+
 if [ "$BRANCH" = unstable ]; then
 	DISTRO=pikaos
+elif [ "$INIT" = systemd ] && [ "$BRANCH:$KERNEL:$DESKTOP" = stable:linux:cinnamon ]; then
+	# Debian stable + Cinnamon is what LMDE is: Linux Mint's packages on top.
+	DISTRO=lmde
 elif [ "$INIT" = systemd ]; then
 	DISTRO=debian
 elif [ "$KERNEL" = linux-libre ] && [ "$INIT" = openrc -o "$INIT" = s6 ]; then
@@ -112,9 +140,11 @@ fi
 # templates are not loaded yet, so db_set would fail, but
 # debconf-set-selections stores the answer and marks it as seen.
 # For systemd, choose-init gets an unknown value and does nothing.
-case "$DESKTOP" in
-	none) TASKS="standard" ;;
-	*)    TASKS="desktop, $DESKTOP-desktop, standard" ;;
+# LMDE's Cinnamon comes from Mint (pre-pkgsel.d/30ultimate-lmde), not tasksel.
+case "$DISTRO:$DESKTOP" in
+	*:none) TASKS="standard" ;;
+	lmde:*) TASKS="desktop, standard" ;;
+	*)      TASKS="desktop, $DESKTOP-desktop, standard" ;;
 esac
 # Without .disk/base_installable the base system comes from the mirror.
 hide_base_installable () {
@@ -198,7 +228,7 @@ d-i mirror/codename string pika
 d-i apt-setup/services-select multiselect
 EOF
 	;;
-debian)
+debian|lmde)
 	# Debian base: from deb.debian.org instead of the disc.
 	hide_base_installable
 	ln -sf debian-archive-keyring.pgp /usr/share/keyrings/archive.gpg
@@ -226,6 +256,7 @@ INIT=$INIT
 KERNEL=$KERNEL
 COMP="$COMP"
 DESKTOP=$DESKTOP
+GFX=$GFX
 BLOBS="$BLOBS"
 EOF
 exit 0

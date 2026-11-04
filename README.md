@@ -13,7 +13,7 @@ stock Devuan installer (text mode) plus one extra step and a few hooks.
 | stable | s6 | linux-libre only | **Genuen** + its s6 packages |
 | stable | SysV, OpenRC, runit | linux (Recommended) | **Devuan**, from the disc |
 | stable | SysV, OpenRC, runit | linux-locos | **Loc-OS** (Devuan + Loc-OS repo and kernel) |
-| stable | systemd | linux | **Debian** stable |
+| stable | systemd | linux | **Debian** stable (**LMDE** with Cinnamon) |
 | stable | systemd | linux-libre | **Debian Libre** (Debian main + linux-libre 6.12) |
 | testing | systemd | linux-libre / linux | **Debian testing** |
 | unstable (x86-64-v3 CPUs) | systemd | its own | **PikaOS** (experimental) |
@@ -27,6 +27,22 @@ stock Devuan installer (text mode) plus one extra step and a few hooks.
   `non-free` are offered.
 - Desktop: MATE (Default), Xfce (Recommended), Cinnamon, GNOME,
   GNOME Flashback, KDE Plasma, LXDE, LXQt or none; downloaded from the net.
+  Cinnamon on Debian stable with linux installs LMDE 7 (Linux Mint's
+  repository on top of Debian, preferred as LMDE does, and mint-meta-cinnamon).
+- Graphics system, asked after the desktop:
+  | Desktop | Choices (first = preselected) |
+  |---|---|
+  | MATE, LXDE, GNOME Flashback | X11 (Xorg), XLibre |
+  | Xfce, Cinnamon, LXQt | X11 (Xorg), XLibre, Wayland (experimental) |
+  | KDE Plasma, GNOME | Wayland, X11 (Xorg), XLibre |
+  | GNOME on testing | Wayland only (no question) |
+
+  XLibre comes from [xlibre-debian](https://xlibre-debian.github.io)
+  (`debian` or `devuan`, `stable` or `testing`; stable also needs the distro's
+  backports). It is installed before the desktop, so it takes the place of
+  Xorg (it provides `xorg` and `xserver-xorg`), and Xorg's server is pinned
+  out. The login screen (LightDM, SDDM or GDM) starts the matching session;
+  Xfce and LXQt get labwc for Wayland.
 - One kernel in the installed system. Closed firmware is opt-in:
   `ultimate-firmware` lists, installs or removes it.
 
@@ -59,6 +75,10 @@ unticked, the root password is asked too.
 - `post-base-installer.d/92ultimate-pika`: PikaOS sources before the kernel.
 - `pre-pkgsel.d/20ultimate`: Debian sources, the kernel when it does not
   come with the distro (linux-libre from freesh, Loc-OS, PikaOS), and s6.
+- `pre-pkgsel.d/25ultimate-xlibre`: XLibre's repository and packages.
+- `pre-pkgsel.d/30ultimate-lmde`: Linux Mint's repository and Cinnamon.
+- `finish-install.d/36ultimate-session`: default session for the graphics
+  system chosen.
 - `finish-install.d/35ultimate`: `ultimate-firmware`, and no blobs with libre.
 
 ## Build
@@ -73,4 +93,7 @@ Debian Ultimate only puts together the work of these projects:
 - [Debian Libre](https://libre.debian.net) — the idea of Debian without non-free
 - [Loc-OS](https://loc-os.com) — Locos por Linux
 - [PikaOS](https://pika-os.com)
+- [Linux Mint / LMDE](https://linuxmint.com)
+- [XLibre](https://github.com/X11Libre/xserver) and its Debian packages,
+  [xlibre-debian](https://xlibre-debian.github.io) (NexusSfan)
 - [GNU Linux-libre / FSFLA freesh](https://www.fsfla.org/ikiwiki/selibre/linux-libre/freesh)

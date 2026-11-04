@@ -33,13 +33,14 @@ Description: Init system:
  Internet.
  .
  s6 comes from Genuen, so it needs linux-libre and an Internet connection.
- systemd installs Debian stable and needs an Internet connection.
+ systemd installs Debian stable (LMDE with linux and Cinnamon) and needs an
+ Internet connection.
 Description-es.UTF-8: Sistema de inicio (init):
  SysV, OpenRC y runit: Devuan, desde este disco. Con linux-libre, OpenRC
  instala Genuen, y SysV y runit descargan linux-libre de Internet.
  .
  s6: Genuen, solo con linux-libre (necesita Internet).
- systemd: Debian stable (necesita Internet).
+ systemd: Debian stable; con linux y Cinnamon, LMDE (necesita Internet).
 
 Template: ultimate/kernel
 Type: select
@@ -76,7 +77,31 @@ Description: Desktop:
 Description-es.UTF-8: Escritorio:
  Se descarga de Internet.
 
+Template: ultimate/graphics
+Type: select
+Choices-C: ${GFX_C}
+Choices: ${GFX}
+Choices-es.UTF-8: ${GFX}
+Description: Graphics system:
+ X11 is the classic X server (Xorg), from the distro. XLibre is a fork of
+ Xorg that is still developed, from its own repository (xlibre-debian).
+ Wayland is offered only when this desktop has a Wayland session.
+Description-es.UTF-8: Sistema gráfico:
+ X11: el servidor X de siempre (Xorg), de la distro. XLibre: fork de Xorg
+ que sigue en desarrollo, desde su repositorio (xlibre-debian). Wayland solo
+ sale si el escritorio tiene sesión Wayland.
+
 Template: ultimate/progress
 Type: text
 Description: Installing the ${KERNEL} kernel...
 Description-es.UTF-8: Instalando el núcleo ${KERNEL}...
+
+Template: ultimate/progress-xlibre
+Type: text
+Description: Installing XLibre...
+Description-es.UTF-8: Instalando XLibre...
+
+Template: ultimate/progress-lmde
+Type: text
+Description: Installing LMDE (Linux Mint Debian Edition)...
+Description-es.UTF-8: Instalando LMDE (Linux Mint Debian Edition)...

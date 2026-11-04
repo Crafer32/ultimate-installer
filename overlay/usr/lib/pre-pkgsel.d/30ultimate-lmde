@@ -1,0 +1,27 @@
+#!/bin/sh
+# Debian Ultimate (LMDE): Debian stable + Cinnamon + linux + systemd is LMDE.
+# Linux Mint's repository goes on top of Debian's, preferred the way LMDE
+# does it (priority 700), and its Cinnamon edition is installed from it.
+# Runs after 25ultimate-xlibre, so XLibre (if chosen) is already in place.
+set -e
+. /usr/share/debconf/confmodule
+. /var/lib/ultimate.env
+[ "$DISTRO" = lmde ] || exit 0
+
+K=/target/etc/apt/keyrings
+mkdir -p $K /target/etc/apt/sources.list.d /target/etc/apt/preferences.d
+cp /usr/share/ultimate/linuxmint-keyring.gpg $K/
+# LMDE 7 (gigi) is built on Debian 13 (trixie).
+echo "deb [signed-by=/etc/apt/keyrings/linuxmint-keyring.gpg] http://packages.linuxmint.com gigi main upstream import backport" \
+	> /target/etc/apt/sources.list.d/linuxmint.list
+cat > /target/etc/apt/preferences.d/official-package-repositories.pref <<PIN
+Package: *
+Pin: origin packages.linuxmint.com
+Pin-Priority: 700
+PIN
+
+db_progress INFO ultimate/progress-lmde
+in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
+in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install linuxmint-keyring mint-meta-cinnamon mint-info-cinnamon lightdm slick-greeter" || \
+	logger -t ultimate "LMDE packages failed to install"
+exit 0
