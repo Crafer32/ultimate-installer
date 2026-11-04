@@ -34,16 +34,14 @@ es*)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
 	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
 	T_NOHW="Este equipo no necesita firmware cerrado: linux-libre funcionará bien."
 	T_KERNELS="linux-libre, linux (Recomendado), linux-locos (LocOS)"
-	T_S6="s6 viene de Genuen y solo funciona con linux-libre."
-	T_EXP="experimental" ;;
+	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
 *)	T_STABLE="stable"; T_TESTING="testing (Debian testing)"
 	T_UNSTABLE="unstable (PikaOS, experimental)"
 	T_NOPIKA="(PikaOS needs an x86-64-v3 CPU with AVX2: not this one.)"
 	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
 	T_NOHW="This computer needs no closed firmware: linux-libre will work fine."
 	T_KERNELS="linux-libre, linux (Recommended), linux-locos (LocOS)"
-	T_S6="s6 comes from Genuen and only works with linux-libre."
-	T_EXP="experimental" ;;
+	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
 esac
 
 # PikaOS is built for x86-64-v3 CPUs (AVX2, BMI2, FMA, MOVBE).
@@ -99,26 +97,14 @@ fi
 
 ask ultimate/desktop; DESKTOP="$RET"
 
-# Graphics system. X11 (Xorg) comes with the distro; XLibre from its own
-# repository; Wayland only where the desktop has a Wayland session in that
-# branch (Debian 13 / Devuan 6: Xfce, Cinnamon and LXQt experimental, Plasma
-# and GNOME by default; MATE, LXDE and Flashback: X11 only).
-# GNOME in testing is Wayland only and PikaOS brings its own: no question.
+# Graphics system, only for X11 desktops: X11 (Xorg, from the distro) or
+# XLibre (from its own repository). Desktops whose official session is
+# Wayland (Plasma, GNOME) keep it; experimental Wayland sessions (Xfce,
+# Cinnamon, LXQt) are not offered. PikaOS brings its own: no question.
 case "$BRANCH:$DESKTOP" in
 unstable:*|*:none)	GFX=default ;;
-testing:gnome)		GFX=wayland ;;
-*)
-	case "$DESKTOP" in
-	kde|gnome)	G_C="wayland, x11, xlibre"; G="Wayland, X11 (Xorg), XLibre"; DEF=wayland ;;
-	xfce|cinnamon|lxqt) G_C="x11, xlibre, wayland"; G="X11 (Xorg), XLibre, Wayland ($T_EXP)"; DEF=x11 ;;
-	*)		G_C="x11, xlibre"; G="X11 (Xorg), XLibre"; DEF=x11 ;;
-	esac
-	db_subst ultimate/graphics GFX_C "$G_C"
-	db_subst ultimate/graphics GFX "$G"
-	# The default depends on the desktop, so it is set here, not in the template.
-	db_set ultimate/graphics "$DEF"
-	ask ultimate/graphics; GFX="$RET"
-	;;
+*:kde|*:gnome)		GFX=wayland ;;
+*)			ask ultimate/graphics; GFX="$RET" ;;
 esac
 
 if [ "$BRANCH" = unstable ]; then

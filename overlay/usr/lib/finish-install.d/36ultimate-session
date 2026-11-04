@@ -1,47 +1,26 @@
 #!/bin/sh
-# Debian Ultimate: the login screen starts the session of the graphics system
-# chosen (ultimate/graphics). XLibre uses the X11 sessions. Each desktop's
-# display manager: LightDM (MATE, Xfce, Cinnamon, LXDE), SDDM (Plasma,
-# LXQt) or GDM (GNOME, Flashback).
+# Debian Ultimate: the login screen (LightDM for MATE, Xfce, Cinnamon and
+# LXDE; SDDM for LXQt; GDM for GNOME Flashback) starts the X11 session of
+# the desktop chosen, also with XLibre. Plasma and GNOME keep Wayland, their
+# official session, so nothing is changed for them.
 set -e
 . /var/lib/ultimate.env
-case "$GFX" in x11|xlibre|wayland) ;; *) exit 0 ;; esac
-[ "$GFX" = wayland ] && W=1 || W=""
+case "$GFX" in x11|xlibre) ;; *) exit 0 ;; esac
 
 case "$DESKTOP" in
-mate)		S=mate ;;
-xfce)		S=xfce${W:+-wayland} ;;
-cinnamon)	S=cinnamon${W:+-wayland} ;;
+mate|xfce|cinnamon|lxqt) S=$DESKTOP ;;
 lxde)		S=LXDE ;;
-lxqt)		S=lxqt${W:+-wayland} ;;
-kde)		[ -n "$W" ] && S=plasma || S=plasmax11 ;;
-gnome)		[ -n "$W" ] && S=gnome || S=gnome-xorg ;;
 gnome-flashback) S=gnome-flashback-metacity ;;
 *)		exit 0 ;;
 esac
 
-# Xfce and LXQt run their Wayland session on labwc; LXQt's comes apart.
-case "$DESKTOP:$W" in
-xfce:1)	P=labwc ;;
-lxqt:1)	P="labwc lxqt-wayland-session" ;;
-*)	P="" ;;
-esac
-[ -z "$P" ] || in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $P" || \
-	logger -t ultimate "$P failed to install"
-
-[ -n "$W" ] && DIR=wayland-sessions || DIR=xsessions
 if [ -d /target/etc/lightdm ]; then
 	mkdir -p /target/etc/lightdm/lightdm.conf.d
 	printf '[Seat:*]\nuser-session=%s\n' "$S" > /target/etc/lightdm/lightdm.conf.d/50-ultimate.conf
 fi
 if [ -d /target/var/lib/sddm ]; then
 	# SDDM starts the last session used; for the first login, this one.
-	printf '[Last]\nSession=/usr/share/%s/%s.desktop\n' "$DIR" "$S" > /target/var/lib/sddm/state.conf
+	printf '[Last]\nSession=/usr/share/xsessions/%s.desktop\n' "$S" > /target/var/lib/sddm/state.conf
 	chroot /target chown sddm:sddm /var/lib/sddm/state.conf 2>/dev/null || true
-fi
-if [ -f /target/etc/gdm3/daemon.conf ] && [ -z "$W" ]; then
-	sed -i 's/^#*[[:space:]]*WaylandEnable=.*/WaylandEnable=false/' /target/etc/gdm3/daemon.conf
-	grep -q '^WaylandEnable=false' /target/etc/gdm3/daemon.conf || \
-		sed -i '/^\[daemon\]/a WaylandEnable=false' /target/etc/gdm3/daemon.conf
 fi
 exit 0

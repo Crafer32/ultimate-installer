@@ -79,17 +79,15 @@ Description-es.UTF-8: Escritorio:
 
 Template: ultimate/graphics
 Type: select
-Choices-C: ${GFX_C}
-Choices: ${GFX}
-Choices-es.UTF-8: ${GFX}
-Description: Graphics system:
+Choices-C: x11, xlibre
+Choices: X11 (Xorg), XLibre
+Default: x11
+Description: X server:
  X11 is the classic X server (Xorg), from the distro. XLibre is a fork of
  Xorg that is still developed, from its own repository (xlibre-debian).
- Wayland is offered only when this desktop has a Wayland session.
-Description-es.UTF-8: Sistema gráfico:
+Description-es.UTF-8: Servidor X:
  X11: el servidor X de siempre (Xorg), de la distro. XLibre: fork de Xorg
- que sigue en desarrollo, desde su repositorio (xlibre-debian). Wayland solo
- sale si el escritorio tiene sesión Wayland.
+ que sigue en desarrollo, desde su repositorio (xlibre-debian).
 
 Template: ultimate/progress
 Type: text
