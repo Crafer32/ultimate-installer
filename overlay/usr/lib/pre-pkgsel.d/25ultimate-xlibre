@@ -13,7 +13,7 @@ K=/target/etc/apt/keyrings
 S=/target/etc/apt/sources.list.d
 mkdir -p $K $S
 cp /usr/share/ultimate/xlibre-archive-keyring.gpg $K/
-case "$DISTRO" in debian|lmde) SYS=debian ;; *) SYS=devuan ;; esac
+case "$DISTRO" in debian) SYS=debian ;; *) SYS=devuan ;; esac
 echo "deb [signed-by=/etc/apt/keyrings/xlibre-archive-keyring.gpg] https://xlibre-debian.github.io/$SYS/ main $BRANCH" > $S/xlibre.list
 T=""
 if [ "$BRANCH" = stable ]; then

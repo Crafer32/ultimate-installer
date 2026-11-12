@@ -13,7 +13,7 @@ K=/target/etc/apt/keyrings
 S=/target/etc/apt/sources.list.d
 mkdir -p $K $S
 
-if [ "$DISTRO" = debian ] || [ "$DISTRO" = lmde ]; then
+if [ "$DISTRO" = debian ]; then
 	# Devuan's apt-setup writes Devuan security/updates lines; use Debian's.
 	[ "$BRANCH" = testing ] && C=forky || C=trixie
 	cat > /target/etc/apt/sources.list <<EOF

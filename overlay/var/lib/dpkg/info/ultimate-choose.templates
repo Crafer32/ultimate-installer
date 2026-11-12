@@ -32,14 +32,13 @@ Description: Init system:
  Internet.
  .
  s6 comes from Genuen, so it needs linux-libre and an Internet connection.
- systemd installs Debian stable (LMDE with linux and Cinnamon) and needs an
- Internet connection.
+ systemd installs Debian stable and needs an Internet connection.
 Description-es.UTF-8: Sistema de inicio (init):
  SysV, OpenRC y runit: Devuan, desde este disco. Con linux-libre, OpenRC
  instala Genuen, y SysV y runit descargan linux-libre de Internet.
  .
  s6: Genuen, solo con linux-libre (necesita Internet).
- systemd: Debian stable; con linux y Cinnamon, LMDE (necesita Internet).
+ systemd: Debian stable (necesita Internet).
 
 Template: ultimate/kernel
 Type: select
@@ -97,8 +96,3 @@ Template: ultimate/progress-xlibre
 Type: text
 Description: Installing XLibre...
 Description-es.UTF-8: Instalando XLibre...
-
-Template: ultimate/progress-lmde
-Type: text
-Description: Installing LMDE (Linux Mint Debian Edition)...
-Description-es.UTF-8: Instalando LMDE (Linux Mint Debian Edition)...

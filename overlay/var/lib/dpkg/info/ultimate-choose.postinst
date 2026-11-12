@@ -7,7 +7,6 @@
 #   stable  + linux-libre + SysV/runit        -> Devuan + linux-libre (FSFLA)
 #   stable  + linux + SysV/OpenRC/runit       -> Devuan  (base from the disc)
 #   stable  + systemd                         -> Debian  (base from the net)
-#   stable  + systemd + linux + Cinnamon      -> LMDE    (Debian + Mint's repo)
 #   testing                                   -> Debian testing (from the net)
 set -e
 . /usr/share/debconf/confmodule
@@ -79,10 +78,7 @@ kde|gnome)	GFX=wayland ;;
 *)		ask ultimate/graphics; GFX="$RET" ;;
 esac
 
-if [ "$INIT" = systemd ] && [ "$BRANCH:$KERNEL:$DESKTOP" = stable:linux:cinnamon ]; then
-	# Debian stable + Cinnamon is what LMDE is: Linux Mint's packages on top.
-	DISTRO=lmde
-elif [ "$INIT" = systemd ]; then
+if [ "$INIT" = systemd ]; then
 	DISTRO=debian
 elif [ "$KERNEL" = linux-libre ] && [ "$INIT" = openrc -o "$INIT" = s6 ]; then
 	# Genuen has no plain SysV (its sysvinit-core needs openrc or s6 as rc),
@@ -96,10 +92,8 @@ fi
 # templates are not loaded yet, so db_set would fail, but
 # debconf-set-selections stores the answer and marks it as seen.
 # For systemd, choose-init gets an unknown value and does nothing.
-# LMDE's Cinnamon comes from Mint (pre-pkgsel.d/30ultimate-lmde), not tasksel.
 case "$DISTRO:$DESKTOP" in
 	*:none) TASKS="standard" ;;
-	lmde:*) TASKS="desktop, standard" ;;
 	*)      TASKS="desktop, $DESKTOP-desktop, standard" ;;
 esac
 # Without .disk/base_installable the base system comes from the mirror.
@@ -161,7 +155,7 @@ d-i mirror/suite string stable
 d-i mirror/codename string excalibur
 EOF
 	;;
-debian|lmde)
+debian)
 	# Debian base: from deb.debian.org instead of the disc.
 	hide_base_installable
 	ln -sf debian-archive-keyring.pgp /usr/share/keyrings/archive.gpg
