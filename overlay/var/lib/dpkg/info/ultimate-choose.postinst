@@ -67,6 +67,10 @@ if [ "$KERNEL" != linux-libre ]; then
 fi
 
 ask ultimate/desktop; DESKTOP="$RET"
+# Cinnamon: Linux Mint's repository is offered (unticked); with it, any distro
+# gets Mint's Cinnamon edition (pre-pkgsel.d/30ultimate-mint).
+MINT=false
+[ "$DESKTOP" = cinnamon ] && { ask ultimate/mint; MINT="$RET"; }
 
 # Graphics system, only for X11 desktops: X11 (Xorg, from the distro) or
 # XLibre (from its own repository). Desktops whose official session is
@@ -92,9 +96,11 @@ fi
 # templates are not loaded yet, so db_set would fail, but
 # debconf-set-selections stores the answer and marks it as seen.
 # For systemd, choose-init gets an unknown value and does nothing.
-case "$DISTRO:$DESKTOP" in
-	*:none) TASKS="standard" ;;
-	*)      TASKS="desktop, $DESKTOP-desktop, standard" ;;
+# With Mint's repository, Cinnamon comes from Mint (30ultimate-mint), not tasksel.
+case "$MINT:$DESKTOP" in
+	*:none)          TASKS="standard" ;;
+	true:cinnamon)   TASKS="desktop, standard" ;;
+	*)          TASKS="desktop, $DESKTOP-desktop, standard" ;;
 esac
 # Without .disk/base_installable the base system comes from the mirror.
 hide_base_installable () {
@@ -183,6 +189,7 @@ INIT=$INIT
 KERNEL=$KERNEL
 COMP="$COMP"
 DESKTOP=$DESKTOP
+MINT=$MINT
 GFX=$GFX
 BLOBS="$BLOBS"
 EOF

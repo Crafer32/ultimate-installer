@@ -96,3 +96,18 @@ Template: ultimate/progress-xlibre
 Type: text
 Description: Installing XLibre...
 Description-es.UTF-8: Instalando XLibre...
+
+Template: ultimate/progress-mint
+Type: text
+Description: Installing Linux Mint (Cinnamon edition)...
+Description-es.UTF-8: Instalando Linux Mint (edición Cinnamon)...
+
+Template: ultimate/mint
+Type: boolean
+Default: false
+Description: Add Linux Mint's repository?
+ Installs Cinnamon from Linux Mint (its own edition, apps and updates) on top
+ of the chosen distro. No: Cinnamon from the distro itself.
+Description-es.UTF-8: ¿Añadir el repositorio de Linux Mint?
+ Instala Cinnamon desde Linux Mint (su edición, aplicaciones y actualizaciones)
+ sobre la distro elegida. No: el Cinnamon de la propia distro.

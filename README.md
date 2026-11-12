@@ -11,14 +11,14 @@ The screens Ultimate Installer adds to the stock installer:
 
 | | |
 |---|---|
-| ![Root password](capturas/1-root.png) | ![Branch](capturas/2-branch.png) |
+| ![Root password](screenshots/1-root.png) | ![Branch](screenshots/2-branch.png) |
 | Same password for root (ticked by default) | Branch: stable or testing |
-| ![Init](capturas/3-init.png) | ![Kernel](capturas/4-kernel.png) |
+| ![Init](screenshots/3-init.png) | ![Kernel](screenshots/4-kernel.png) |
 | Init system | Kernel, with a warning about hardware that needs closed firmware |
-| ![Repositories](capturas/5-repos.png) | ![Desktop](capturas/6-desktop.png) |
+| ![Repositories](screenshots/5-repos.png) | ![Desktop](screenshots/6-desktop.png) |
 | Extra repositories (not with linux-libre) | Desktop |
-| ![X server](capturas/7-xserver.png) | |
-| X server, only for X11 desktops | |
+| ![Linux Mint](screenshots/8-mint.png) | ![X server](screenshots/7-xserver.png) |
+| With Cinnamon: add Linux Mint's repository? | X server, only for X11 desktops |
 
 ## What gets installed
 
@@ -39,6 +39,9 @@ The screens Ultimate Installer adds to the stock installer:
   `non-free-firmware` (ticked), `contrib` and `non-free` (optional).
 - **Desktop**: MATE (Default), Xfce, Cinnamon, GNOME, GNOME Flashback,
   KDE Plasma, LXDE, LXQt or none.
+- **Linux Mint**: with Cinnamon, the installer asks whether to add Linux
+  Mint's repository (No by default). Mint is used as a repository, not as a
+  distro: on Devuan, Genuen or Debian you get Mint's Cinnamon edition.
 - **X server**: for X11 desktops, X11 (Xorg, Default) or
   [XLibre](https://github.com/X11Libre/xserver). Plasma and GNOME use Wayland.
 - One kernel in the installed system; closed firmware can be added or removed
@@ -57,6 +60,7 @@ Ultimate Installer only puts together the work of these projects:
 - [Devuan](https://devuan.org) — Debian without systemd, and its installer
 - [Debian](https://www.debian.org) — the base of everything, and debian-installer
 - [Debian Libre](https://libre.debian.net) — the idea of Debian without non-free
+- [Linux Mint](https://linuxmint.com) — its Cinnamon edition and repository
 - [XLibre](https://github.com/X11Libre/xserver) and its Debian packages,
   [xlibre-debian](https://xlibre-debian.github.io) (NexusSfan)
 - [GNU Linux-libre / FSFLA freesh](https://www.fsfla.org/ikiwiki/selibre/linux-libre/freesh)

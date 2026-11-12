@@ -1,0 +1,63 @@
+digraph U {
+  rankdir=LR; nodesep=0.18; ranksep=0.45; bgcolor="white";
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=12, fillcolor="#f2f2f2", color="#888888"];
+  edge [color="#777777", arrowsize=0.6];
+  ui [label="Ultimate Installer\n(Devuan ISO)", fillcolor="#263238", fontcolor="white", fontsize=15];
+
+  st [label="Branch: stable\n(Default)", fillcolor="#e3f2fd"];
+  te [label="Branch: testing", fillcolor="#e3f2fd"];
+  ui -> st; ui -> te;
+
+  // stable
+  sysv [label="Init: SysV (Default)\nor runit", fillcolor="#fff8e1"];
+  orc  [label="Init: OpenRC", fillcolor="#fff8e1"];
+  s6   [label="Init: s6", fillcolor="#fff8e1"];
+  sd   [label="Init: systemd", fillcolor="#fff8e1"];
+  st -> sysv; st -> orc; st -> s6; st -> sd;
+
+  node [fillcolor="#ede7f6"];
+  k1 [label="linux-libre (Default)"]; k2 [label="linux (Recommended)"];
+  k4 [label="linux-libre"]; k5 [label="linux"];
+  k7 [label="linux-libre\n(only option)"];
+  k8 [label="linux"]; k9 [label="linux-libre"];
+  sysv -> k1; sysv -> k2;
+  orc -> k4; orc -> k5;
+  s6 -> k7;
+  sd -> k8; sd -> k9;
+
+  node [shape=box, style="rounded,filled,bold", fillcolor="#c8e6c9", color="#2e7d32"];
+  d1 [label="Devuan\n+ linux-libre (FSFLA)"];
+  d2 [label="Devuan"];
+  d4 [label="Genuen\n(libre Devuan)"];
+  d5 [label="Genuen + s6"];
+  d6 [label="Debian stable"];
+  d7 [label="Debian Libre\n(main + linux-libre)"];
+  k1 -> d1; k2 -> d2; k5 -> d2;
+  k4 -> d4; k7 -> d5; k8 -> d6; k9 -> d7;
+
+  // testing
+  tsd [label="Init: systemd\n(fixed, not asked)", style="rounded,filled", fillcolor="#fff8e1", color="#888888"];
+  te -> tsd;
+  node [style="rounded,filled", fillcolor="#ede7f6", color="#888888"];
+  tk1 [label="linux"]; tk2 [label="linux-libre"];
+  tsd -> tk1; tsd -> tk2;
+  node [style="rounded,filled,bold", fillcolor="#c8e6c9", color="#2e7d32"];
+  d9 [label="Debian testing"]; d10 [label="Debian testing\n+ linux-libre"];
+  tk1 -> d9; tk2 -> d10;
+
+  // desktop and X
+  subgraph cluster_desktop {
+    label="Then, for any distro"; fontname="DejaVu Sans"; fontsize=13; style="rounded,dashed"; color="#999999";
+    node [style="rounded,filled", fillcolor="#fce4ec", color="#888888"];
+    rep [label="Repositories: linux-libre → main only\nothers → main + non-free-firmware (ticked)\n+ optional contrib / non-free"];
+    esc [label="Desktop: MATE (Default), Xfce,\nCinnamon, GNOME, GNOME Flashback,\nKDE Plasma, LXDE, LXQt or none"];
+    mint [label="Cinnamon → asked: add Linux Mint's repository?\n(No by default) Yes → Mint's Cinnamon edition"];
+    x11 [label="X11 desktops (MATE, Xfce, Cinnamon,\nLXDE, LXQt, Flashback)\n→ asked: X11 (Xorg) or XLibre"];
+    way [label="Plasma and GNOME → Wayland\n(X is not asked)"];
+    gn  [label="Idea: GNOME → systemd only\n(Debian testing / 14)", fillcolor="#ffe0b2", color="#e65100"];
+    fut [label="Idea: if Cinnamon/Xfce/LXQt move to\nWayland BY DEFAULT → not asked either", fillcolor="#ffe0b2", color="#e65100"];
+    rep -> esc; esc -> mint; esc -> x11; esc -> way; way -> gn [style=dashed]; x11 -> fut [style=dashed];
+  }
+  legend [shape=note, style="filled", fillcolor="#fffde7", color="#bbbbbb", fontsize=11,
+       label="Legend\nYellow = init · Purple = kernel\nGreen = resulting distro\nOrange = pending idea\nDefault = the conservative choice · Recommended = the practical one"];
+}
