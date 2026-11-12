@@ -14,7 +14,6 @@ few hooks.
 | stable | OpenRC (Recommended) | linux-libre | **Genuen** (libre Devuan), from the disc |
 | stable | s6 | linux-libre only | **Genuen** + its s6 packages |
 | stable | SysV, OpenRC, runit | linux (Recommended) | **Devuan**, from the disc |
-| stable | SysV, OpenRC, runit | linux-locos | **Loc-OS** (Devuan + Loc-OS repo and kernel) |
 | stable | systemd | linux | **Debian** stable (**LMDE** with Cinnamon) |
 | stable | systemd | linux-libre | **Debian Libre** (Debian main + linux-libre 6.12) |
 | testing | systemd | linux-libre / linux | **Debian testing** |
@@ -66,7 +65,7 @@ unticked, the root password is asked too.
     the mirror.
 - `apt-setup/generators/39ultimate`: Genuen's disc as apt source.
 - `pre-pkgsel.d/20ultimate`: Debian sources, the kernel when it does not
-  come with the distro (linux-libre from freesh, Loc-OS), and s6.
+  come with the distro (linux-libre from freesh), and s6.
 - `pre-pkgsel.d/25ultimate-xlibre`: XLibre's repository and packages.
 - `pre-pkgsel.d/30ultimate-lmde`: Linux Mint's repository and Cinnamon.
 - `finish-install.d/36ultimate-session`: the login screen starts the X11
@@ -83,7 +82,6 @@ Ultimate Installer only puts together the work of these Debian/Devuan projects:
 - [Devuan](https://devuan.org) — Debian without systemd, and its installer
 - [Debian](https://www.debian.org) — the base of everything, and debian-installer
 - [Debian Libre](https://libre.debian.net) — the idea of Debian without non-free
-- [Loc-OS](https://loc-os.com) — Locos por Linux
 - [Linux Mint / LMDE](https://linuxmint.com)
 - [XLibre](https://github.com/X11Libre/xserver) and its Debian packages,
   [xlibre-debian](https://xlibre-debian.github.io) (NexusSfan)

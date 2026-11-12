@@ -5,8 +5,7 @@
 #   stable  + linux-libre + OpenRC/s6         -> Genuen  (base from the disc;
 #                                                s6 from its repo)
 #   stable  + linux-libre + SysV/runit        -> Devuan + linux-libre (FSFLA)
-#   stable  + linux/locos + SysV/OpenRC/runit -> Devuan  (base from the disc;
-#                                                LocOS once its repo is added)
+#   stable  + linux + SysV/OpenRC/runit       -> Devuan  (base from the disc)
 #   stable  + systemd                         -> Debian  (base from the net)
 #   stable  + systemd + linux + Cinnamon      -> LMDE    (Debian + Mint's repo)
 #   testing                                   -> Debian testing (from the net)
@@ -29,11 +28,11 @@ db_get debian-installer/language || RET=en
 case "$RET" in
 es*)	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
 	T_NOHW="Este equipo no necesita firmware cerrado: linux-libre funcionará bien."
-	T_KERNELS="linux-libre, linux (Recomendado), linux-locos (LocOS)"
+	T_KERNELS="linux-libre, linux (Recomendado)"
 	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
 *)	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
 	T_NOHW="This computer needs no closed firmware: linux-libre will work fine."
-	T_KERNELS="linux-libre, linux (Recommended), linux-locos (LocOS)"
+	T_KERNELS="linux-libre, linux (Recommended)"
 	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
 esac
 
@@ -55,12 +54,8 @@ if [ "$INIT" = s6 ]; then
 	db_subst ultimate/kernel KERNELS_C "linux-libre"
 	db_subst ultimate/kernel KERNELS "${T_KERNELS%%,*}"
 	NOTE="$T_S6"
-elif [ "$BRANCH" = testing ]; then
-	# LocOS is built on stable: it is not offered with testing.
-	db_subst ultimate/kernel KERNELS_C "linux-libre, linux"
-	db_subst ultimate/kernel KERNELS "${T_KERNELS%, *}"
 else
-	db_subst ultimate/kernel KERNELS_C "linux-libre, linux, linux-locos"
+	db_subst ultimate/kernel KERNELS_C "linux-libre, linux"
 	db_subst ultimate/kernel KERNELS "$T_KERNELS"
 fi
 db_subst ultimate/kernel HWNOTE "$NOTE"

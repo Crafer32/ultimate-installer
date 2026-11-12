@@ -5,7 +5,6 @@
 #   Genuen + linux-libre, Devuan + linux: the distro's own kernel, nothing to do
 #   Debian/Devuan + linux-libre: linux-libre from the FSFLA freesh repo
 #   Genuen + s6: Genuen's s6 packages (as its own installer installs them)
-#   linux-locos: LocOS repo (its newer base-files turn the system into LocOS)
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
@@ -49,11 +48,6 @@ debian:*:linux-libre|devuan:*:linux-libre)
 	# stable: the same 6.12 series as Debian; testing: the latest one.
 	[ "$BRANCH" = stable ] && PKGS="linux-libre-6.12" || PKGS="linux-libre"
 	;;
-*:*:linux-locos)
-	cp /usr/share/ultimate/loc-os-archive-keyring.gpg $K/
-	echo "deb [signed-by=/etc/apt/keyrings/loc-os-archive-keyring.gpg] http://fr.loc-os.com chill main" > $S/loc-os.list
-	PKGS=""	# versioned kernel packages only: the newest is picked below
-	;;
 *)
 	exit 0
 	;;
@@ -64,10 +58,6 @@ db_progress INFO ultimate/progress
 # "apt-get update" fails while the install disc is still listed as a source
 # (cdrom:// has no Release file here), so its exit status is not checked.
 in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
-if [ "$KERNEL" = linux-locos ]; then	# versioned kernel packages only: take the newest
-	NEWEST=$(chroot /target sh -c "apt-cache pkgnames linux-image- | grep -- '-loc-os\$' | sort -V | tail -n 1")
-	PKGS="$NEWEST base-files"
-fi
 
 # Genuen + s6 keeps Genuen's own kernel: only the init changes.
 if [ "$DISTRO" = genuen ]; then

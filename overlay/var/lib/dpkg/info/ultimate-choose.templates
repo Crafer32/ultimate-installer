@@ -10,13 +10,13 @@ Choices: stable, testing (Debian testing)
 Choices-es.UTF-8: stable, testing (Debian testing)
 Default: stable
 Description: Branch:
- stable installs Genuen, Devuan, Debian or LocOS, depending on the init and
+ stable installs Genuen, Devuan or Debian, depending on the init and
  kernel chosen next.
  .
  testing installs Debian testing; it uses systemd and needs an Internet
  connection.
 Description-es.UTF-8: Rama:
- stable: Genuen, Devuan, Debian o LocOS, según el init y el núcleo.
+ stable: Genuen, Devuan o Debian, según el init y el núcleo.
  .
  testing: Debian testing. Usa systemd y necesita Internet.
 

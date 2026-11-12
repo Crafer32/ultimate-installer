@@ -1,0 +1,64 @@
+digraph U {
+  rankdir=LR; nodesep=0.18; ranksep=0.45; bgcolor="white";
+  node [shape=box, style="rounded,filled", fontname="DejaVu Sans", fontsize=12, fillcolor="#f2f2f2", color="#888888"];
+  edge [color="#777777", arrowsize=0.6];
+  ui [label="Ultimate Installer\n(ISO de Devuan)", fillcolor="#263238", fontcolor="white", fontsize=15];
+
+  st [label="Rama: estable\n(Default)", fillcolor="#e3f2fd"];
+  te [label="Rama: testing", fillcolor="#e3f2fd"];
+  ui -> st; ui -> te;
+
+  // estable
+  sysv [label="Init: SysV (Default)\no runit", fillcolor="#fff8e1"];
+  orc  [label="Init: OpenRC\n(Recomendado)", fillcolor="#fff8e1"];
+  s6   [label="Init: s6", fillcolor="#fff8e1"];
+  sd   [label="Init: systemd", fillcolor="#fff8e1"];
+  st -> sysv; st -> orc; st -> s6; st -> sd;
+
+  node [fillcolor="#ede7f6"];
+  k1 [label="linux-libre (Default)"]; k2 [label="linux (Recomendado)"];
+  k4 [label="linux-libre"]; k5 [label="linux"];
+  k7 [label="linux-libre\n(única opción)"];
+  k8 [label="linux"]; k9 [label="linux-libre"];
+  sysv -> k1; sysv -> k2;
+  orc -> k4; orc -> k5;
+  s6 -> k7;
+  sd -> k8; sd -> k9;
+
+  node [shape=box, style="rounded,filled,bold", fillcolor="#c8e6c9", color="#2e7d32"];
+  d1 [label="Devuan\n+ linux-libre (FSFLA)"];
+  d2 [label="Devuan"];
+  d4 [label="Genuen\n(Devuan libre)"];
+  d5 [label="Genuen + s6"];
+  d6 [label="Debian estable"];
+  d7 [label="Debian Libre\n(main + linux-libre)"];
+  d8 [label="LMDE\n(si escritorio = Cinnamon)\nidea: preguntar antes", fillcolor="#b2dfdb", color="#00695c"];
+  k1 -> d1; k2 -> d2; k5 -> d2;
+  k4 -> d4; k7 -> d5; k8 -> d6; k9 -> d7;
+  d6 -> d8 [style=dashed, label=" + Cinnamon", fontname="DejaVu Sans", fontsize=10];
+
+  // testing
+  tsd [label="Init: systemd\n(fijo, no se pregunta)", style="rounded,filled", fillcolor="#fff8e1", color="#888888"];
+  te -> tsd;
+  node [style="rounded,filled", fillcolor="#ede7f6", color="#888888"];
+  tk1 [label="linux"]; tk2 [label="linux-libre"];
+  tsd -> tk1; tsd -> tk2;
+  node [style="rounded,filled,bold", fillcolor="#c8e6c9", color="#2e7d32"];
+  d9 [label="Debian testing"]; d10 [label="Debian testing\n+ linux-libre"];
+  tk1 -> d9; tk2 -> d10;
+
+  // escritorio y X
+  subgraph cluster_esc {
+    label="Después, para cualquier distro"; fontname="DejaVu Sans"; fontsize=13; style="rounded,dashed"; color="#999999";
+    node [style="rounded,filled", fillcolor="#fce4ec", color="#888888"];
+    rep [label="Repos: linux-libre → solo main\nresto → main + non-free-firmware (marcado)\n+ contrib / non-free opcionales"];
+    esc [label="Escritorio: MATE (Default), Xfce (Recomendado),\nCinnamon, GNOME, GNOME Flashback,\nKDE Plasma, LXDE, LXQt o ninguno"];
+    x11 [label="Escritorios X11 (MATE, Xfce, Cinnamon,\nLXDE, LXQt, Flashback)\n→ se pregunta: X11 (Xorg) o XLibre"];
+    way [label="Plasma y GNOME → Wayland\n(no se pregunta por X)"];
+    gn  [label="Idea: GNOME → solo systemd\n(Debian testing / 14)", fillcolor="#ffe0b2", color="#e65100"];
+    fut [label="Idea: si Cinnamon/Xfce/LXQt pasan a\nWayland POR DEFECTO → tampoco se pregunta", fillcolor="#ffe0b2", color="#e65100"];
+    rep -> esc; esc -> x11; esc -> way; way -> gn [style=dashed]; x11 -> fut [style=dashed];
+  }
+  ley [shape=note, style="filled", fillcolor="#fffde7", color="#bbbbbb", fontsize=11,
+       label="Leyenda\nAmarillo = init · Morado = núcleo\nVerde = distro resultante\nNaranja = idea pendiente\nDefault = lo conservador · Recomendado = lo práctico"];
+}
