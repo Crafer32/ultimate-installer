@@ -40,8 +40,11 @@ The screens Ultimate Installer adds to the stock installer:
 - **Desktop**: MATE (Default), Xfce, Cinnamon, GNOME, GNOME Flashback,
   KDE Plasma, LXDE, LXQt or none.
 - **Linux Mint**: with Cinnamon, the installer asks whether to add Linux
-  Mint's repository (No by default). Mint is used as a repository, not as a
-  distro: on Devuan, Genuen or Debian you get Mint's Cinnamon edition.
+  Mint's repository (No by default, stable only). Mint is used as a
+  repository, not as a distro: Mint's repository stays (at a low priority, so
+  it never replaces the distro's packages) and Mint's apps are installed
+  (Software Manager, backups, welcome screen, themes…), except the update
+  manager, which needs systemd.
 - **X server**: for X11 desktops, X11 (Xorg, Default) or
   [XLibre](https://github.com/X11Libre/xserver). Plasma and GNOME use Wayland.
 - One kernel in the installed system; closed firmware can be added or removed

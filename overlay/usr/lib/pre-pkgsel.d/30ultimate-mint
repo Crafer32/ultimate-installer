@@ -1,10 +1,19 @@
 #!/bin/sh
-# Ultimate Installer: with Cinnamon, if the user accepts Linux Mint's
-# repository, any distro (Devuan, Genuen, Debian) gets Mint's Cinnamon edition.
-# Mint is used as a repository, not as a distro:
-# its repository goes on top, preferred the way LMDE does it (priority 700),
-# and Mint's Cinnamon edition is installed from it.
-# Runs after 25ultimate-xlibre, so XLibre (if chosen) is already in place.
+# Ultimate Installer: with Cinnamon, if the user accepts Linux Mint's repository,
+# the distro (Devuan, Genuen or Debian stable) keeps Mint's repository and gets
+# Mint's Cinnamon edition minus what needs systemd. Mint is used as a
+# repository, not as a distro:
+# - Mint's repository has a low priority (100): it only adds what the distro
+#   lacks and never replaces the distro's packages (an upgrade changes nothing;
+#   sources.list and os-release stay the distro's).
+# - MINT_PKGS is mint-meta-cinnamon + mint-meta-core without: mintupdate
+#   (depends on systemd), mintreport (needs mintupdate) and
+#   debian-system-adjustments (removes bootlogd from SysV systems).
+MINT_PKGS="linuxmint-keyring mintinstall mintbackup mintwelcome mintsources mint-mirrors
+mintsysadm mintsystem mint-info mint-artwork mint-translations grub2-theme-mint bulky
+folder-color-switcher xdg-desktop-portal-xapp inxi command-not-found
+cinnamon cinnamon-control-center cinnamon-screensaver cinnamon-session nemo nemo-fileroller
+gir1.2-nemo-3.0 gir1.2-gnomedesktop-3.0"
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
@@ -16,12 +25,12 @@ cp /usr/share/ultimate/linuxmint-keyring.gpg $K/
 # LMDE 7 (gigi) is built on Debian 13 (trixie), the base of Devuan excalibur too.
 echo "deb [signed-by=/etc/apt/keyrings/linuxmint-keyring.gpg] http://packages.linuxmint.com gigi main upstream import backport" \
 	> /target/etc/apt/sources.list.d/linuxmint.list
-cat > /target/etc/apt/preferences.d/official-package-repositories.pref <<PIN
+cat > /target/etc/apt/preferences.d/linuxmint.pref <<PIN
 Package: *
 Pin: origin packages.linuxmint.com
-Pin-Priority: 700
+Pin-Priority: 100
 PIN
-# Without systemd (Devuan, Genuen) Mint must not bring it in and swap the init.
+# Without systemd (Devuan, Genuen) nothing from Mint may bring it in.
 if [ "$INIT" != systemd ]; then
 	cat > /target/etc/apt/preferences.d/ultimate-no-systemd.pref <<PIN
 Package: systemd systemd-sysv
@@ -32,6 +41,6 @@ fi
 
 db_progress INFO ultimate/progress-mint
 in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
-in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install linuxmint-keyring mint-meta-cinnamon mint-info-cinnamon lightdm slick-greeter" || \
-	logger -t ultimate "Linux Mint packages failed to install"
+in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $(echo $MINT_PKGS)" || \
+	logger -t ultimate "Linux Mint's packages failed to install"
 exit 0
