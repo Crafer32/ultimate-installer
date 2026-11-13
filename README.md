@@ -47,6 +47,10 @@ The screens Ultimate Installer adds to the stock installer:
 "Install" skips the boring questions (domain, mirror, proxy, GRUB disk…);
 "Expert install" asks everything.
 
+## Versions
+Ultimate 1.x follows Devuan 6.x: Devuan 6.1 = Ultimate 1.1. Our own fixes on
+the same Devuan base are 1.1.1, 1.1.2…
+
 ## Build
     ./build-iso.sh devuan_excalibur_6.1.1_amd64_netinstall.iso \
         genuen-6.0.1-netinstall-2026.10.11-amd64.iso out/ultimate-installer.iso
