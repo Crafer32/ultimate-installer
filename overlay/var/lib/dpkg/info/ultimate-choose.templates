@@ -96,20 +96,3 @@ Template: ultimate/progress-xlibre
 Type: text
 Description: Installing XLibre...
 Description-es.UTF-8: Instalando XLibre...
-
-Template: ultimate/progress-mint
-Type: text
-Description: Adding Linux Mint's repository and apps...
-Description-es.UTF-8: Añadiendo el repositorio y las aplicaciones de Linux Mint...
-
-Template: ultimate/mint
-Type: boolean
-Default: false
-Description: Add Linux Mint's repository?
- Keeps Linux Mint's repository in the chosen distro and installs Mint's
- apps (Software Manager, backups, welcome screen, themes...), except the update
- manager, which needs systemd.
-Description-es.UTF-8: ¿Añadir el repositorio de Linux Mint?
- Deja el repositorio de Linux Mint en la distro elegida e instala sus
- aplicaciones (Gestor de software, copias de seguridad, bienvenida, temas...),
- salvo el gestor de actualizaciones, que necesita systemd.

@@ -63,17 +63,17 @@ ask ultimate/kernel; KERNEL="$RET"
 # linux-libre gets main only; any other kernel lets the user pick the rest.
 COMP=""
 if [ "$KERNEL" != linux-libre ]; then
+	# testing is taken as the gaming choice: all three ticked by default
+	# (the user can still untick them); stable keeps non-free-firmware only.
+	if [ "$BRANCH" = testing ]; then
+		db_set ultimate/components "non-free-firmware, contrib, non-free"
+	else
+		db_set ultimate/components "non-free-firmware"
+	fi
 	ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
 fi
 
 ask ultimate/desktop; DESKTOP="$RET"
-# Cinnamon: Linux Mint's repository is offered (unticked); with it, the distro
-# keeps Mint's repository and gets Mint's Software Manager
-# (pre-pkgsel.d/30ultimate-mint). Only on stable: Mint's base (LMDE 7) is
-# Debian 13, and it does not install on testing.
-MINT=false
-[ "$DESKTOP:$BRANCH" = cinnamon:stable ] && { ask ultimate/mint; MINT="$RET"; }
-
 # Graphics system, only for X11 desktops: X11 (Xorg, from the distro) or
 # XLibre (from its own repository). Desktops whose official session is
 # Wayland (Plasma, GNOME) keep it; experimental Wayland sessions (Xfce,
@@ -189,7 +189,6 @@ INIT=$INIT
 KERNEL=$KERNEL
 COMP="$COMP"
 DESKTOP=$DESKTOP
-MINT=$MINT
 GFX=$GFX
 BLOBS="$BLOBS"
 EOF

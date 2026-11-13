@@ -11,14 +11,12 @@ The screens Ultimate Installer adds to the stock installer:
 
 | | |
 |---|---|
-| ![Root password](screenshots/1-root.png) | ![Branch](screenshots/2-branch.png) |
-| Same password for root (ticked by default) | Branch: stable or testing |
-| ![Init](screenshots/3-init.png) | ![Kernel](screenshots/4-kernel.png) |
-| Init system | Kernel, with a warning about hardware that needs closed firmware |
-| ![Repositories](screenshots/5-repos.png) | ![Desktop](screenshots/6-desktop.png) |
-| Extra repositories (not with linux-libre) | Desktop |
-| ![Linux Mint](screenshots/8-mint.png) | ![X server](screenshots/7-xserver.png) |
-| With Cinnamon: add Linux Mint's repository? | X server, only for X11 desktops |
+| ![Branch](screenshots/2-branch.png) | ![Init](screenshots/3-init.png) |
+| Branch: stable or testing | Init system |
+| ![Kernel](screenshots/4-kernel.png) | ![Repositories](screenshots/5-repos.png) |
+| Kernel, with a warning about hardware that needs closed firmware | Extra repositories (not with linux-libre) |
+| ![Desktop](screenshots/6-desktop.png) | ![X server](screenshots/7-xserver.png) |
+| Desktop | X server, only for X11 desktops |
 
 ## What gets installed
 
@@ -36,15 +34,11 @@ The screens Ultimate Installer adds to the stock installer:
   firmware (Wi-Fi, graphics…) works. The screen tells you if your hardware
   needs it.
 - **Repositories**: with linux-libre, `main` only. With "linux", `main` plus
-  `non-free-firmware` (ticked), `contrib` and `non-free` (optional).
+  `non-free-firmware`, `contrib` and `non-free` to choose from: on stable only
+  `non-free-firmware` comes ticked; on testing all three do (untick what you
+  don't want).
 - **Desktop**: MATE (Default), Xfce, Cinnamon, GNOME, GNOME Flashback,
   KDE Plasma, LXDE, LXQt or none.
-- **Linux Mint**: with Cinnamon, the installer asks whether to add Linux
-  Mint's repository (No by default, stable only). Mint is used as a
-  repository, not as a distro: Mint's repository stays (at a low priority, so
-  it never replaces the distro's packages) and Mint's apps are installed
-  (Software Manager, backups, welcome screen, themes…), except the update
-  manager, which needs systemd.
 - **X server**: for X11 desktops, X11 (Xorg, Default) or
   [XLibre](https://github.com/X11Libre/xserver). Plasma and GNOME use Wayland.
 - One kernel in the installed system; closed firmware can be added or removed
@@ -63,7 +57,6 @@ Ultimate Installer only puts together the work of these projects:
 - [Devuan](https://devuan.org) — Debian without systemd, and its installer
 - [Debian](https://www.debian.org) — the base of everything, and debian-installer
 - [Debian Libre](https://libre.debian.net) — the idea of Debian without non-free
-- [Linux Mint](https://linuxmint.com) — its Cinnamon edition and repository
 - [XLibre](https://github.com/X11Libre/xserver) and its Debian packages,
   [xlibre-debian](https://xlibre-debian.github.io) (NexusSfan)
 - [GNU Linux-libre / FSFLA freesh](https://www.fsfla.org/ikiwiki/selibre/linux-libre/freesh)
