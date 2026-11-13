@@ -2,7 +2,8 @@
 # Ultimate Installer: the login screen (LightDM for MATE, Xfce, Cinnamon and
 # LXDE; SDDM for LXQt; GDM for GNOME Flashback) starts the X11 session of
 # the desktop chosen, also with XLibre. Plasma and GNOME keep Wayland, their
-# official session, so nothing is changed for them.
+# official session, so nothing is changed for them. With Linux Mint, the
+# login screen is Mint's (slick-greeter).
 set -e
 . /var/lib/ultimate.env
 case "$GFX" in x11|xlibre) ;; *) exit 0 ;; esac
@@ -17,6 +18,10 @@ esac
 if [ -d /target/etc/lightdm ]; then
 	mkdir -p /target/etc/lightdm/lightdm.conf.d
 	printf '[Seat:*]\nuser-session=%s\n' "$S" > /target/etc/lightdm/lightdm.conf.d/50-ultimate.conf
+	# Linux Mint's editions log in with Mint's own login screen.
+	if [ "$MINT" = true ] && [ -e /target/usr/share/xgreeters/slick-greeter.desktop ]; then
+		echo "greeter-session=slick-greeter" >> /target/etc/lightdm/lightdm.conf.d/50-ultimate.conf
+	fi
 fi
 if [ -d /target/var/lib/sddm ]; then
 	# SDDM starts the last session used; for the first login, this one.

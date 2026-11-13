@@ -22,5 +22,7 @@ if db_get ultimate/rootsame && [ "$RET" = same ] && db_get passwd/username && [ 
 	rm -f /target/etc/shadow.ultimate
 fi
 [ "$KERNEL" = linux-libre ] || exit 0
+# ...unless non-free-firmware was ticked on the repositories screen.
+case " $COMP " in *" non-free-firmware "*) exit 0 ;; esac
 in-target /usr/local/bin/ultimate-firmware remove || true
 exit 0

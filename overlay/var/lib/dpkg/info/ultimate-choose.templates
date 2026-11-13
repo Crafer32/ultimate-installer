@@ -53,27 +53,26 @@ Description-es.UTF-8: Núcleo:
 
 Template: ultimate/components
 Type: multiselect
-Choices-C: non-free-firmware, contrib, non-free
-Choices: non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software such as NVIDIA or Steam)
-Choices-es.UTF-8: non-free-firmware (firmware cerrado para el hardware), contrib, non-free (software cerrado: NVIDIA, Steam...)
-Default: non-free-firmware
+Choices-C: ${COMPS_C}
+Choices: ${COMPS}
+Choices-es.UTF-8: ${COMPS}
 Description: Repositories:
- main is always included.
+ ${MAINNOTE}
  .
  Extra repositories to enable:
 Description-es.UTF-8: Repositorios:
- main siempre está activado. Repositorios adicionales:
+ ${MAINNOTE} Repositorios adicionales:
 
 Template: ultimate/desktop
 Type: select
-Choices-C: mate, xfce, cinnamon, gnome, gnome-flashback, kde, lxde, lxqt, none
-Choices: MATE, Xfce, Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)
-Choices-es.UTF-8: MATE, Xfce, Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, Ninguno (solo consola)
+Choices-C: ${DESKTOPS_C}
+Choices: ${DESKTOPS}
+Choices-es.UTF-8: ${DESKTOPS}
 Default: mate
 Description: Desktop:
- The desktop environment to install (downloaded from the Internet).
+ ${DESKNOTE}
 Description-es.UTF-8: Escritorio:
- Se descarga de Internet.
+ ${DESKNOTE}
 
 Template: ultimate/graphics
 Type: select
@@ -101,3 +100,7 @@ Template: ultimate/progress-xlibre
 Type: text
 Description: Installing XLibre...
 Description-es.UTF-8: Instalando XLibre...
+Template: ultimate/progress-mint
+Type: text
+Description: Installing Linux Mint (${EDITION} edition)...
+Description-es.UTF-8: Instalando Linux Mint (edición ${EDITION})...

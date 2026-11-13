@@ -8,6 +8,8 @@
 #   stable  + linux + SysV/OpenRC/runit       -> Devuan  (base from the disc)
 #   stable  + systemd                         -> Debian  (base from the net)
 #   testing                                   -> Debian testing (from the net)
+# On stable, Linux Mint (ticked with the repositories) adds Mint's Cinnamon,
+# MATE or Xfce edition to any of them (pre-pkgsel.d/30ultimate-mint).
 set -e
 . /usr/share/debconf/confmodule
 [ -e /var/run/ultimate-debug ] && { exec 2>/dev/ttyS0; set -x; }
@@ -28,11 +30,25 @@ case "$RET" in
 es*)	T_HW="Hardware no compatible con linux-libre: %s. Se recomienda el núcleo \"linux\"."
 	T_NOHW="Este equipo no necesita firmware cerrado: linux-libre funcionará bien."
 	T_KERNELS="linux-libre, linux (Recomendado)"
-	T_S6="s6 viene de Genuen y solo funciona con linux-libre." ;;
+	T_S6="s6 viene de Genuen y solo funciona con linux-libre."
+	T_COMPS="non-free-firmware (firmware cerrado para el hardware), contrib, non-free (software cerrado: NVIDIA, Steam...)"
+	T_MINT="Linux Mint (Cinnamon/MATE/Xfce de Mint)"
+	T_MAIN="main siempre está activado."
+	T_MINTNOTE="Linux Mint usa todos los repositorios; desmarca los que no quieras."
+	T_DESK="Se descarga de Internet."
+	T_MINTDESK="Linux Mint: sus ediciones Cinnamon, MATE y Xfce."
+	T_DESKTOPS="MATE, Xfce, Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, Ninguno (solo consola)" ;;
 *)	T_HW="Hardware not compatible with linux-libre: %s. The \"linux\" kernel is recommended."
 	T_NOHW="This computer needs no closed firmware: linux-libre will work fine."
 	T_KERNELS="linux-libre, linux (Recommended)"
-	T_S6="s6 comes from Genuen and only works with linux-libre." ;;
+	T_S6="s6 comes from Genuen and only works with linux-libre."
+	T_COMPS="non-free-firmware (closed firmware the kernel loads), contrib, non-free (closed software such as NVIDIA or Steam)"
+	T_MINT="Linux Mint (Mint's Cinnamon/MATE/Xfce)"
+	T_MAIN="main is always included."
+	T_MINTNOTE="Linux Mint uses all repositories; untick what you don't want."
+	T_DESK="The desktop environment to install (downloaded from the Internet)."
+	T_MINTDESK="Linux Mint: its Cinnamon, MATE and Xfce editions."
+	T_DESKTOPS="MATE, Xfce, Cinnamon, GNOME, GNOME Flashback, KDE Plasma, LXDE, LXQt, None (console only)" ;;
 esac
 
 ask ultimate/branch; BRANCH="$RET"
@@ -60,19 +76,52 @@ fi
 db_subst ultimate/kernel HWNOTE "$NOTE"
 ask ultimate/kernel; KERNEL="$RET"
 
-# linux-libre gets main only; any other kernel lets the user pick the rest.
-COMP=""
-if [ "$KERNEL" != linux-libre ]; then
-	# testing is taken as the gaming choice: all three ticked by default
-	# (the user can still untick them); stable keeps non-free-firmware only.
-	if [ "$BRANCH" = testing ]; then
-		db_set ultimate/components "non-free-firmware, contrib, non-free"
-	else
-		db_set ultimate/components "non-free-firmware"
-	fi
-	ask ultimate/components; COMP=$(echo "$RET" | sed 's/,//g')
+# Repositories, for any kernel. Ticked by default: nothing with linux-libre;
+# on stable non-free-firmware; on testing (taken as the gaming choice) all
+# three. Linux Mint is offered on stable only: its base, LMDE 7, is Debian 13.
+ALL="non-free-firmware, contrib, non-free"
+if [ "$BRANCH" = stable ]; then
+	db_subst ultimate/components COMPS_C "mint, $ALL"
+	db_subst ultimate/components COMPS "$T_MINT, $T_COMPS"
+else
+	db_subst ultimate/components COMPS_C "$ALL"
+	db_subst ultimate/components COMPS "$T_COMPS"
 fi
+db_subst ultimate/components MAINNOTE "$T_MAIN"
+if [ "$KERNEL" = linux-libre ]; then
+	db_set ultimate/components ""
+elif [ "$BRANCH" = testing ]; then
+	db_set ultimate/components "$ALL"
+else
+	db_set ultimate/components "non-free-firmware"
+fi
+ask ultimate/components
+# Linux Mint ticked: LMDE enables every repository, so the same screen comes
+# back with all of them ticked; the user can still untick any.
+case ", $RET," in
+*", mint,"*)
+	db_set ultimate/components "mint, $ALL"
+	db_subst ultimate/components MAINNOTE "$T_MAIN $T_MINTNOTE"
+	db_fset ultimate/components seen false
+	ask ultimate/components ;;
+esac
+MINT=false
+case ", $RET," in *", mint,"*) MINT=true ;; esac
+COMP=$(echo " $RET " | sed 's/,//g; s/ mint / /; s/^ *//; s/ *$//')
 
+# Desktop: with Linux Mint, only Mint's editions (Cinnamon by default).
+if [ "$MINT" = true ]; then
+	db_subst ultimate/desktop DESKTOPS_C "cinnamon, mate, xfce"
+	db_subst ultimate/desktop DESKTOPS "Cinnamon, MATE, Xfce"
+	db_subst ultimate/desktop DESKNOTE "$T_DESK $T_MINTDESK"
+	db_get ultimate/desktop; CUR="$RET"
+	db_fget ultimate/desktop seen
+	case "$RET:$CUR" in true:cinnamon|true:mate|true:xfce) ;; *) db_set ultimate/desktop cinnamon ;; esac
+else
+	db_subst ultimate/desktop DESKTOPS_C "mate, xfce, cinnamon, gnome, gnome-flashback, kde, lxde, lxqt, none"
+	db_subst ultimate/desktop DESKTOPS "$T_DESKTOPS"
+	db_subst ultimate/desktop DESKNOTE "$T_DESK"
+fi
 ask ultimate/desktop; DESKTOP="$RET"
 # Graphics system, only for X11 desktops: X11 (Xorg, from the distro) or
 # XLibre (from its own repository). Desktops whose official session is
@@ -190,6 +239,7 @@ KERNEL=$KERNEL
 COMP="$COMP"
 DESKTOP=$DESKTOP
 GFX=$GFX
+MINT=$MINT
 BLOBS="$BLOBS"
 EOF
 exit 0

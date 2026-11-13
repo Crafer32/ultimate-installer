@@ -49,13 +49,15 @@ digraph U {
   subgraph cluster_desktop {
     label="Then, for any distro"; fontname="DejaVu Sans"; fontsize=13; style="rounded,dashed"; color="#999999";
     node [style="rounded,filled", fillcolor="#fce4ec", color="#888888"];
-    rep [label="Repositories: linux-libre → main only\nstable → non-free-firmware ticked\n(contrib / non-free optional)\ntesting → all three ticked"];
+    rep [label="Repositories (always asked):\nlinux-libre → none ticked\nstable → non-free-firmware ticked\ntesting → all three ticked\n+ Linux Mint (stable only, unticked)"];
+    mint [label="Linux Mint ticked → asked again\nwith all repositories ticked"];
     esc [label="Desktop: MATE (Default), Xfce,\nCinnamon, GNOME, GNOME Flashback,\nKDE Plasma, LXDE, LXQt or none"];
+    mesc [label="With Linux Mint: Cinnamon (Default),\nMATE or Xfce (Mint's editions)"];
     x11 [label="X11 desktops (MATE, Xfce, Cinnamon,\nLXDE, LXQt, Flashback)\n→ asked: X11 (Xorg) or XLibre"];
     way [label="Plasma and GNOME → Wayland\n(X is not asked)"];
     gn  [label="Idea: GNOME → systemd only\n(Debian testing / 14)", fillcolor="#ffe0b2", color="#e65100"];
     fut [label="Idea: if Cinnamon/Xfce/LXQt move to\nWayland BY DEFAULT → not asked either", fillcolor="#ffe0b2", color="#e65100"];
-    rep -> esc; esc -> x11; esc -> way; way -> gn [style=dashed]; x11 -> fut [style=dashed];
+    rep -> esc; rep -> mint [style=dashed]; mint -> mesc; mesc -> x11; esc -> x11; esc -> way; way -> gn [style=dashed]; x11 -> fut [style=dashed];
   }
   legend [shape=note, style="filled", fillcolor="#fffde7", color="#bbbbbb", fontsize=11,
        label="Legend\nYellow = init · Purple = kernel\nGreen = resulting distro\nOrange = pending idea\nDefault = the conservative choice · Recommended = the practical one"];

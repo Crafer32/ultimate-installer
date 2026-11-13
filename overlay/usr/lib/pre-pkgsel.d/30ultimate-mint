@@ -1,0 +1,105 @@
+#!/bin/sh
+# Ultimate Installer: Linux Mint (ticked on the repositories screen, stable
+# only). Mint's repository goes in as LMDE 7 ("gigi", built on Debian 13, the
+# base of Devuan excalibur too) has it, and Mint's edition of the desktop goes
+# in before tasksel adds the distro's own desktop task:
+#   Cinnamon: mint-meta-cinnamon + mint-meta-core, as LMDE installs it.
+#   MATE, Xfce: LMDE has no such editions, so Linux Mint 22.3's
+#     (mint-meta-mate, mint-meta-xfce) are rebuilt from mint-meta-core, the
+#     distro's desktop packages and the Mint ones that LMDE has. Not in LMDE,
+#     so left out: mugshot, xfce4-xapp-status-plugin, gnome-system-tools.
+# The distro keeps its identity: Mint's base-files (os-release) is pinned out.
+# Without systemd, nothing from Mint may bring it in: systemd is pinned out,
+# and mint-meta-core is installed without mintupdate (depends on systemd),
+# mintreport and debian-system-adjustments (its plymouth removes bootlogd);
+# Mint's firefox needs the latter, so the distro's firefox-esr goes in instead.
+set -e
+. /usr/share/debconf/confmodule
+. /var/lib/ultimate.env
+[ "$MINT" = true ] || exit 0
+
+CORE="linuxmint-keyring mint-info-cinnamon mint-artwork mint-translations mintbackup
+mintinstall mintsystem mint-mirrors mintsources mintwelcome mintsysadm command-not-found
+inxi grub2-theme-mint"
+CINNAMON="nemo nemo-fileroller cinnamon cinnamon-screensaver cinnamon-session
+cinnamon-control-center gir1.2-gnomedesktop-3.0 gir1.2-nemo-3.0 folder-color-switcher bulky
+xdg-desktop-portal-xapp"
+MATE="caja folder-color-switcher mate-control-center mate-desktop mate-icon-theme mate-menus
+mate-notification-daemon mate-panel mate-session-manager mate-settings-daemon marco
+mate-terminal mate-media mintmenu mintdesktop engrampa mate-applets mate-power-manager
+mate-screensaver mate-system-monitor mate-utils mate-indicator-applet mate-polkit
+mate-sensors-applet mate-user-guide bulky xdg-desktop-portal-xapp"
+XFCE="thunar thunar-archive-plugin thunar-media-tags-plugin thunar-volman xfce4-appfinder
+xfce4-panel xfce4-places-plugin xfce4-session xfce4-settings xfconf xfdesktop4
+xfce4-screenshooter xfwm4 mintdesktop xfce4-cpufreq-plugin xfce4-eyes-plugin
+xfce4-mailwatch-plugin xfce4-systemload-plugin xfce4-timer-plugin xfce4-time-out-plugin
+xfce4-verve-plugin xfce4-whiskermenu-plugin xdg-desktop-portal-xapp"
+# Mint's own apps and login screen, in every edition.
+APPS="slick-greeter lightdm-settings mintlocale mintstick xed xreader xviewer pix
+timeshift webapp-manager sticky"
+
+[ "$INIT" = systemd ] && CORE="mint-meta-core" || APPS="$APPS firefox-esr"
+case "$DESKTOP" in
+cinnamon) E=Cinnamon; [ "$INIT" = systemd ] && D="mint-meta-cinnamon" || D="$CINNAMON" ;;
+mate)     E=MATE; D="$MATE" ;;
+xfce)     E=Xfce; D="$XFCE" ;;
+*)        exit 0 ;;
+esac
+
+K=/target/etc/apt/keyrings
+S=/target/etc/apt/sources.list.d
+P=/target/etc/apt/preferences.d
+mkdir -p $K $S $P
+cp /usr/share/ultimate/linuxmint-keyring.gpg $K/
+echo "deb [signed-by=/etc/apt/keyrings/linuxmint-keyring.gpg] http://packages.linuxmint.com gigi main upstream import backport" \
+	> $S/linuxmint.list
+# LMDE also has the base distro's backports (low priority, as always).
+case "$DISTRO" in
+debian) echo "deb http://deb.debian.org/debian trixie-backports main $COMP" > $S/backports.list ;;
+devuan) echo "deb http://deb.devuan.org/merged excalibur-backports main $COMP" > $S/backports.list ;;
+esac
+cat > $P/linuxmint.pref <<PIN
+# Ultimate Installer: Linux Mint's repository, as in LMDE, but the distro
+# keeps its own base-files (os-release).
+Package: base-files
+Pin: origin packages.linuxmint.com
+Pin-Priority: -1
+PIN
+if [ "$INIT" != systemd ]; then
+	cat > $P/ultimate-no-systemd.pref <<PIN
+# Ultimate Installer: no systemd in this system (Linux Mint's packages must
+# not bring it in). Mint's firefox needs debian-system-adjustments, left
+# out here: the distro's firefox-esr is used.
+Package: systemd systemd-sysv
+Pin: release *
+Pin-Priority: -1
+
+Package: firefox
+Pin: origin packages.linuxmint.com
+Pin-Priority: -1
+PIN
+fi
+
+db_subst ultimate/progress-mint EDITION "$E"
+db_progress INFO ultimate/progress-mint
+in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
+
+# Only what this distro and Mint's repository have (logged otherwise).
+PKGS=""
+for p in $CORE $D $APPS; do
+	C=$(chroot /target apt-cache policy "$p" 2>/dev/null | awk '/Candidate:/ {print $2}')
+	if [ -n "$C" ] && [ "$C" != "(none)" ]; then
+		PKGS="$PKGS $p"
+	else
+		logger -t ultimate "Linux Mint: $p not available, left out"
+	fi
+done
+inst () { in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $*"; }
+if ! inst $PKGS; then
+	# One by one, so that one package cannot keep the rest out.
+	logger -t ultimate "Linux Mint: installing the packages one by one"
+	for p in $PKGS; do
+		inst $p || logger -t ultimate "Linux Mint: $p failed to install"
+	done
+fi
+exit 0
