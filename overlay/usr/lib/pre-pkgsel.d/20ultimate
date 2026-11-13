@@ -5,6 +5,7 @@
 #   Genuen + linux-libre, Devuan + linux: the distro's own kernel, nothing to do
 #   Debian/Devuan + linux-libre: linux-libre from the FSFLA freesh repo
 #   Genuen + s6: Genuen's s6 packages (as its own installer installs them)
+#   Genuen: eudev instead of vdev (see below)
 set -e
 . /usr/share/debconf/confmodule
 . /var/lib/ultimate.env
@@ -36,11 +37,48 @@ Pin-Priority: -1
 EOF
 fi
 
+# Every path gets systemd's udev (Debian) or eudev (Devuan, Genuen).
+# Genuen's disc only carries vdev, which does not apply udev rules: elogind
+# never sees a graphical seat and the login screen does not start. eudev
+# (Genuen's main repository) replaces it and enables itself for OpenRC
+# (sysinit) or s6 (devmanager bundle). It goes in after s6, so that it is
+# registered with it; vdev is purged, and so is what only vdev had pulled in
+# if apt would autoremove it (and nothing else). build-essential, which vdev
+# Pre-Depends on, stays: apt keeps it because other packages suggest it, and
+# Genuen's task-desktop wants dpkg-dev anyway.
+genuen_eudev() {
+	db_progress INFO ultimate/progress-udev
+	autoremovable() {
+		chroot /target apt-get -s autoremove 2>/dev/null | awk '/^Remv / {print $2}' | sort
+	}
+	autoremovable > /target/tmp/ultimate-auto.before
+	if ! in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y --purge install eudev"; then
+		logger -t ultimate "eudev failed to install; keeping vdev"
+		return 0
+	fi
+	# vdev's runit supervise dirs, left empty by its purge.
+	chroot /target dpkg -S /etc/sv/vdev >/dev/null 2>&1 || rm -rf /target/etc/sv/vdev
+	LEFT=$(autoremovable | chroot /target comm -13 /tmp/ultimate-auto.before - | tr '\n' ' ')
+	rm -f /target/tmp/ultimate-auto.before
+	if [ -z "$LEFT" ]; then logger -t ultimate "eudev in; nothing left by vdev to remove"; return 0; fi
+	# Only if apt would remove exactly those packages.
+	WOULD=$(chroot /target apt-get -s remove $LEFT 2>/dev/null | awk '/^Remv / {print $2}' | sort | tr '\n' ' ')
+	if [ "$WOULD" = "$LEFT" ]; then
+		logger -t ultimate "removing what vdev left: $LEFT"
+		in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y --purge remove $LEFT" || true
+	else
+		logger -t ultimate "not removing what vdev left: $LEFT"
+	fi
+}
+
 case "$DISTRO:$INIT:$KERNEL" in
 genuen:s6:*)
 	# The same packages as Genuen's choose-init; genuen-s6-init replaces
 	# sysvinit-core and openrc.
 	PKGS="execline s6 s6-rc s6-rc-policy s6-linux-init genuen-s6-init s6-linux-utils s6-portable-utils"
+	;;
+genuen:*)
+	PKGS=""
 	;;
 debian:*:linux-libre|devuan:*:linux-libre)
 	cp /usr/share/ultimate/freesh-archive-keyring.gpg $K/
@@ -53,16 +91,19 @@ debian:*:linux-libre|devuan:*:linux-libre)
 	;;
 esac
 
-db_subst ultimate/progress KERNEL "$KERNEL"
-db_progress INFO ultimate/progress
+if [ -n "$PKGS" ]; then
+	db_subst ultimate/progress KERNEL "$KERNEL"
+	db_progress INFO ultimate/progress
+fi
 # "apt-get update" fails while the install disc is still listed as a source
 # (cdrom:// has no Release file here), so its exit status is not checked.
 in-target sh -c "apt-get -q -y install ca-certificates; apt-get -q update" || true
 
-# Genuen + s6 keeps Genuen's own kernel: only the init changes.
+# Genuen keeps its own kernel: s6 if chosen, and eudev.
 if [ "$DISTRO" = genuen ]; then
-	in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS" || \
+	[ -z "$PKGS" ] || in-target sh -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y install $PKGS" || \
 		logger -t ultimate "s6 failed to install; keeping the stock init"
+	genuen_eudev
 	exit 0
 fi
 # Only one kernel in the installed system: the stock one is removed once
